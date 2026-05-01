@@ -1,7 +1,9 @@
 import React from 'react'
+import { useNavigate } from 'react-router-dom'
 import './Hero.css'
 
 export default function Hero() {
+  const navigate = useNavigate()
   return (
     <section className="hero">
       <div className="hero__blob hero__blob--1" aria-hidden="true" />
@@ -27,13 +29,13 @@ export default function Hero() {
           </p>
 
           <div className="hero__actions">
-            <button className="hero__btn hero__btn--primary">
-              Login
+            <button className="hero__btn hero__btn--primary" onClick={() => navigate('/login', { state: { role: 'student' } })}>
+              Login as Student
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3" />
               </svg>
             </button>
-            <button className="hero__btn hero__btn--secondary">
+            <button className="hero__btn hero__btn--secondary" onClick={() => navigate('/signup')}>
               Create Account
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM19 8v6M22 11h-6" />
