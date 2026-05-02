@@ -1,5 +1,6 @@
 import React from 'react'
 import { Routes, Route } from 'react-router-dom'
+import InstructorDashboard from '../pages/InstructorDashboard/InstructorDashboard'
 import Home from '../pages/Home/Home'
 import Login from '../pages/Login/Login'
 import SignUp from '../pages/SignUp/SignUp'
@@ -8,6 +9,10 @@ import CourseDetails from '../pages/CourseDetails/CourseDetails'
 import StudentCourses from '../pages/StudentCourses/StudentCourses'
 import MyCourses from '../pages/MyCourses/MyCourses'
 import StudentSchedule from '../pages/StudentSchedule/StudentSchedule'
+
+
+
+
 
 export default function AppRoutes() {
   return (
@@ -20,6 +25,8 @@ export default function AppRoutes() {
       <Route path="/student/courses" element={<StudentCourses />} />
       <Route path="/student/my-courses" element={<MyCourses />} />
       <Route path="/student/schedule" element={<StudentSchedule />} />
+      <Route path="/instructor/dashboard" element={<InstructorDashboard />} />
     </Routes>
+    
   )
 }
