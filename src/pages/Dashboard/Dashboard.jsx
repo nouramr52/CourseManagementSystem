@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import Navbar from '../../components/shared/Navbar/Navbar'
 import Footer from '../../components/shared/Footer/Footer'
 import './Dashboard.css'
+import './DashboardStudent.css'
 
 export default function Dashboard() {
   const navigate = useNavigate()
@@ -156,6 +157,46 @@ export default function Dashboard() {
               <h3 className="dashboard__card-title">Average Progress</h3>
               <p className="dashboard__card-value">{averageProgress}%</p>
               <p className="dashboard__card-label">Overall completion</p>
+            </div>
+          </div>
+
+          {/* Student Quick Access */}
+          <div className="dashboard__section">
+            <div className="dashboard__section-header">
+              <h2 className="dashboard__section-title">Student Portal</h2>
+              <p className="dashboard__section-subtitle">Quick access to your learning tools</p>
+            </div>
+            <div className="ds-quick-access">
+              <div className="ds-quick-card" onClick={() => navigate('/student/courses')}>
+                <div className="ds-quick-card__icon" style={{ background: '#eef2ff', color: '#4f46e5' }}>🔍</div>
+                <div className="ds-quick-card__content">
+                  <h3 className="ds-quick-card__title">Browse Courses</h3>
+                  <p className="ds-quick-card__desc">Explore all available courses and enroll</p>
+                </div>
+                <svg className="ds-quick-card__arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+              </div>
+              <div className="ds-quick-card" onClick={() => navigate('/student/my-courses')}>
+                <div className="ds-quick-card__icon" style={{ background: '#ecfdf5', color: '#10b981' }}>📚</div>
+                <div className="ds-quick-card__content">
+                  <h3 className="ds-quick-card__title">My Courses</h3>
+                  <p className="ds-quick-card__desc">View and manage your enrolled courses</p>
+                </div>
+                <svg className="ds-quick-card__arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+              </div>
+              <div className="ds-quick-card" onClick={() => navigate('/student/schedule')}>
+                <div className="ds-quick-card__icon" style={{ background: '#ecfeff', color: '#06b6d4' }}>🗓️</div>
+                <div className="ds-quick-card__content">
+                  <h3 className="ds-quick-card__title">My Schedule</h3>
+                  <p className="ds-quick-card__desc">View your weekly class timetable</p>
+                </div>
+                <svg className="ds-quick-card__arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+              </div>
             </div>
           </div>
 
