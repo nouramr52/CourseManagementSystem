@@ -5,6 +5,9 @@ import Login from '../pages/Login/Login'
 import SignUp from '../pages/SignUp/SignUp'
 import Dashboard from '../pages/Dashboard/Dashboard'
 import CourseDetails from '../pages/CourseDetails/CourseDetails'
+import StudentCourses from '../pages/StudentCourses/StudentCourses'
+import MyCourses from '../pages/MyCourses/MyCourses'
+import StudentSchedule from '../pages/StudentSchedule/StudentSchedule'
 
 export default function AppRoutes() {
   return (
@@ -14,6 +17,9 @@ export default function AppRoutes() {
       <Route path="/signup" element={<SignUp />} />
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/course/:id" element={<CourseDetails />} />
+      <Route path="/student/courses" element={<StudentCourses />} />
+      <Route path="/student/my-courses" element={<MyCourses />} />
+      <Route path="/student/schedule" element={<StudentSchedule />} />
     </Routes>
   )
 }
