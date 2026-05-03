@@ -74,20 +74,28 @@ export default function Dashboard() {
   ])
 
   useEffect(() => {
-    // Check if user is logged in
-    const token = localStorage.getItem('token')
-    const userData = localStorage.getItem('user')
+    const token = localStorage.getItem('token');
+
+    const rawUser = localStorage.getItem('user');
+
+    let parsedUser = null;
+
+    try {
+      if (rawUser && rawUser !== "undefined") {
+        parsedUser = JSON.parse(rawUser);
+      }
+    } catch (err) {
+      console.log("Invalid user in localStorage:", err);
+      localStorage.removeItem("user"); // clean bad data
+    }
 
     if (!token) {
-      // Redirect to login if not authenticated
-      navigate('/login')
-      return
+      navigate('/login');
+      return;
     }
 
-    if (userData) {
-      setUser(JSON.parse(userData))
-    }
-  }, [navigate])
+    setUser(parsedUser);
+  }, [navigate]);
 
   const totalAssignments = courses.reduce((sum, course) => sum + course.assignments, 0)
   const completedAssignments = courses.reduce((sum, course) => sum + course.completedAssignments, 0)
@@ -209,8 +217,8 @@ export default function Dashboard() {
 
             <div className="dashboard__courses">
               {courses.map((course) => (
-                <div 
-                  key={course.id} 
+                <div
+                  key={course.id}
                   className="course-card"
                   onClick={() => handleCourseClick(course.id)}
                 >
@@ -251,8 +259,8 @@ export default function Dashboard() {
                       <span>{course.progress}%</span>
                     </div>
                     <div className="course-card__progress-bar">
-                      <div 
-                        className="course-card__progress-fill" 
+                      <div
+                        className="course-card__progress-fill"
                         style={{ width: `${course.progress}%`, background: course.color }}
                       />
                     </div>
@@ -295,8 +303,8 @@ export default function Dashboard() {
                     <span className="progress-chart__percentage">{course.progress}%</span>
                   </div>
                   <div className="progress-chart__bar">
-                    <div 
-                      className="progress-chart__fill" 
+                    <div
+                      className="progress-chart__fill"
                       style={{ width: `${course.progress}%`, background: course.color }}
                     />
                   </div>

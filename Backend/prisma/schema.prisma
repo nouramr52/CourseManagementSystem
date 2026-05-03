@@ -1,0 +1,117 @@
+// =====================
+// ENUMS
+// =====================
+
+enum Role {
+  STUDENT
+  INSTRUCTOR
+  ADMIN
+}
+
+enum EnrollmentStatus {
+  PENDING
+  ACTIVE
+  COMPLETED
+  DROPPED
+}
+
+enum SubmissionStatus {
+  SUBMITTED
+  GRADED
+  LATE
+}
+
+// =====================
+// USER
+// =====================
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(STUDENT)
+  createdAt DateTime @default(now())
+
+  // Relations
+  coursesCreated Course[]        @relation("InstructorCourses")
+  enrollments    Enrollment[]
+  submissions    Submission[]
+}
+
+// =====================
+// COURSE
+// =====================
+
+model Course {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  createdAt   DateTime @default(now())
+
+  // Instructor
+  instructorId Int
+  instructor   User @relation("InstructorCourses", fields: [instructorId], references: [id])
+
+  // Relations
+  enrollments Enrollment[]
+  assignments Assignment[]
+}
+
+// =====================
+// ENROLLMENT (JOIN TABLE)
+// =====================
+
+model Enrollment {
+  id        Int               @id @default(autoincrement())
+  status    EnrollmentStatus  @default(PENDING)
+  enrolledAt DateTime         @default(now())
+
+  // Relations
+  studentId Int
+  courseId  Int
+
+  student User   @relation(fields: [studentId], references: [id])
+  course  Course @relation(fields: [courseId], references: [id])
+
+  @@unique([studentId, courseId]) // prevent duplicate enrollment
+}
+
+// =====================
+// ASSIGNMENT
+// =====================
+
+model Assignment {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  dueDate     DateTime
+  createdAt   DateTime @default(now())
+
+  // Relations
+  courseId Int
+  course   Course @relation(fields: [courseId], references: [id])
+
+  submissions Submission[]
+}
+
+// =====================
+// SUBMISSION
+// =====================
+
+model Submission {
+  id          Int      @id @default(autoincrement())
+  content     String   // link or text
+  grade       Float?
+  status      SubmissionStatus @default(SUBMITTED)
+  submittedAt DateTime @default(now())
+
+  // Relations
+  assignmentId Int
+  studentId    Int
+
+  assignment Assignment @relation(fields: [assignmentId], references: [id])
+  student    User       @relation(fields: [studentId], references: [id])
+
+  @@unique([assignmentId, studentId]) // one submission per student per assignment
+}

@@ -72,56 +72,35 @@ export default function SignUp() {
     }
   }
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    setApiError('')
+  const handleSubmit = async (e) => { // 🔥 make it async
+    e.preventDefault();
+    setApiError("");
 
-    if (!validateForm()) {
-      return
+    if (!validateForm()) return;
+
+    setIsLoading(true);
+
+    try {
+      const res = await registerUser({
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        role: formData.role,
+      });
+
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("user", JSON.stringify(res.data.user));
+
+      navigate("/dashboard");
+
+    } catch (err) {
+      setApiError(
+        err.response?.data?.message || "Registration failed"
+      );
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(true)
-
-    // Simulate loading for better UX
-    setTimeout(() => {
-      try {
-        // Check if email already exists
-        const existingUsers = JSON.parse(localStorage.getItem('users') || '[]')
-        const emailExists = existingUsers.some(user => user.email === formData.email)
-
-        if (emailExists) {
-          setApiError('This email is already registered. Please use a different email or login.')
-          setIsLoading(false)
-          return
-        }
-
-        // Create new user
-        const newUser = {
-          id: Date.now().toString(),
-          name: formData.name,
-          email: formData.email,
-          role: formData.role,
-          createdAt: new Date().toISOString()
-        }
-
-        // Save user to localStorage
-        existingUsers.push(newUser)
-        localStorage.setItem('users', JSON.stringify(existingUsers))
-
-        // Create a simple token (just for frontend)
-        const token = btoa(JSON.stringify({ userId: newUser.id, email: newUser.email }))
-        localStorage.setItem('token', token)
-        localStorage.setItem('user', JSON.stringify(newUser))
-
-        // Navigate to dashboard
-        navigate('/dashboard')
-      } catch (error) {
-        setApiError('Registration failed. Please try again.')
-      } finally {
-        setIsLoading(false)
-      }
-    }, 800) // Simulate network delay
-  }
+  };
 
   return (
     <div className="auth-page">

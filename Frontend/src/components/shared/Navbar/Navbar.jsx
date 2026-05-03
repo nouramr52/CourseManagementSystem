@@ -16,19 +16,22 @@ export default function Navbar() {
   }, [])
 
   useEffect(() => {
-    // Check login status
-    const token = localStorage.getItem('token')
-    const userData = localStorage.getItem('user')
-    
-    if (token && userData) {
-      setIsLoggedIn(true)
-      setUser(JSON.parse(userData))
-    } else {
-      setIsLoggedIn(false)
-      setUser(null)
-    }
-  }, [location]) // Re-check when location changes
+    const token = localStorage.getItem('token');
 
+    const userData = localStorage.getItem("user");
+    const parsedUser =
+      userData && userData !== "undefined"
+        ? JSON.parse(userData)
+        : null;
+
+    if (token && parsedUser) {
+      setIsLoggedIn(true);
+      setUser(parsedUser);
+    } else {
+      setIsLoggedIn(false);
+      setUser(null);
+    }
+  }, [location]);
   const handleLogout = () => {
     localStorage.removeItem('token')
     localStorage.removeItem('user')
