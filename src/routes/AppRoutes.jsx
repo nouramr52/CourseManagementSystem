@@ -9,6 +9,7 @@ import CourseDetails from '../pages/CourseDetails/CourseDetails'
 import StudentCourses from '../pages/StudentCourses/StudentCourses'
 import MyCourses from '../pages/MyCourses/MyCourses'
 import StudentSchedule from '../pages/StudentSchedule/StudentSchedule'
+import AdminDashboard from '../pages/AdminDashboard/AdminDashboard'
 
 
 
@@ -26,6 +27,7 @@ export default function AppRoutes() {
       <Route path="/student/my-courses" element={<MyCourses />} />
       <Route path="/student/schedule" element={<StudentSchedule />} />
       <Route path="/instructor/dashboard" element={<InstructorDashboard />} />
+      <Route path="/admin/dashboard" element={<AdminDashboard />} />
     </Routes>
     
   )
