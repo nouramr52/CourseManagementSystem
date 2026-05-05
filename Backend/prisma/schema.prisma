@@ -1,4 +1,18 @@
 // =====================
+// PRISMA CONFIG
+// =====================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// =====================
 // ENUMS
 // =====================
 
@@ -9,109 +23,146 @@ enum Role {
 }
 
 enum EnrollmentStatus {
-  PENDING
   ACTIVE
-  COMPLETED
   DROPPED
-}
-
-enum SubmissionStatus {
-  SUBMITTED
-  GRADED
-  LATE
+  COMPLETED
 }
 
 // =====================
-// USER
+// USER (base entity)
+// Fields: user_id, name, email, password, role
 // =====================
 
 model User {
-  id        Int      @id @default(autoincrement())
-  name      String
-  email     String   @unique
-  password  String
-  role      Role     @default(STUDENT)
-  createdAt DateTime @default(now())
+  id       Int    @id @default(autoincrement())
+  name     String
+  email    String @unique
+  password String
+  role     Role   @default(STUDENT)
+
+  // IS A relations
+  student    Student?
+  instructor Instructor?
+  admin      Admin?
+}
+
+// =====================
+// STUDENT (IS A User)
+// Fields: student_id, user_id, major, year
+// =====================
+
+model Student {
+  id     Int    @id @default(autoincrement())
+  major  String?
+  year   Int?
+
+  // IS A User
+  userId Int  @unique
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Relations
-  coursesCreated Course[]        @relation("InstructorCourses")
-  enrollments    Enrollment[]
-  submissions    Submission[]
+  enrollments Enrollment[]
+}
+
+// =====================
+// INSTRUCTOR (IS A User)
+// Fields: instructor_id, user_id, department
+// =====================
+
+model Instructor {
+  id         Int     @id @default(autoincrement())
+  department String?
+
+  // IS A User
+  userId Int  @unique
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Relations
+  courses Course[]
+}
+
+// =====================
+// ADMIN (IS A User)
+// Fields: admin_id, user_id
+// =====================
+
+model Admin {
+  id Int @id @default(autoincrement())
+
+  // IS A User
+  userId Int  @unique
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 // =====================
 // COURSE
+// Fields: course_id, title, description, capacity, instructor_id
 // =====================
 
 model Course {
-  id          Int      @id @default(autoincrement())
-  title       String
-  description String?
-  createdAt   DateTime @default(now())
+  id           Int     @id @default(autoincrement())
+  title        String
+  description  String?
+  capacity     Int
 
-  // Instructor
+  // Taught by one Instructor
   instructorId Int
-  instructor   User @relation("InstructorCourses", fields: [instructorId], references: [id])
+  instructor   Instructor @relation(fields: [instructorId], references: [id])
 
   // Relations
   enrollments Enrollment[]
-  assignments Assignment[]
+  materials   Material[]
+  schedules   Schedule[]
 }
 
 // =====================
-// ENROLLMENT (JOIN TABLE)
+// ENROLLMENT (ENROLS relationship)
+// Fields: enrollment_id, student_id, course_id, enrollment_date, status
 // =====================
 
 model Enrollment {
-  id        Int               @id @default(autoincrement())
-  status    EnrollmentStatus  @default(PENDING)
-  enrolledAt DateTime         @default(now())
+  id             Int              @id @default(autoincrement())
+  enrollmentDate DateTime         @default(now())
+  status         EnrollmentStatus @default(ACTIVE)
 
-  // Relations
+  // Student enrolls in Course
   studentId Int
   courseId  Int
 
-  student User   @relation(fields: [studentId], references: [id])
-  course  Course @relation(fields: [courseId], references: [id])
+  student Student @relation(fields: [studentId], references: [id])
+  course  Course  @relation(fields: [courseId], references: [id])
 
   @@unique([studentId, courseId]) // prevent duplicate enrollment
 }
 
 // =====================
-// ASSIGNMENT
+// MATERIAL (CONTAINS relationship)
+// Fields: material_id, course_id, title, file_path
 // =====================
 
-model Assignment {
-  id          Int      @id @default(autoincrement())
-  title       String
-  description String?
-  dueDate     DateTime
-  createdAt   DateTime @default(now())
+model Material {
+  id       Int    @id @default(autoincrement())
+  title    String
+  filePath String?
 
-  // Relations
+  // Belongs to one Course
   courseId Int
-  course   Course @relation(fields: [courseId], references: [id])
-
-  submissions Submission[]
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
 }
 
 // =====================
-// SUBMISSION
+// SCHEDULE (HAS A relationship — Course has a Schedule)
+// Fields: schedule_id, course_id, day, start_time, end_time, room
 // =====================
 
-model Submission {
-  id          Int      @id @default(autoincrement())
-  content     String   // link or text
-  grade       Float?
-  status      SubmissionStatus @default(SUBMITTED)
-  submittedAt DateTime @default(now())
+model Schedule {
+  id        Int    @id @default(autoincrement())
+  day       String // e.g. "Monday", "Tuesday"
+  startTime String // e.g. "10:00"
+  endTime   String // e.g. "11:30"
+  room      String?
 
-  // Relations
-  assignmentId Int
-  studentId    Int
-
-  assignment Assignment @relation(fields: [assignmentId], references: [id])
-  student    User       @relation(fields: [studentId], references: [id])
-
-  @@unique([assignmentId, studentId]) // one submission per student per assignment
+  // Belongs to one Course
+  courseId Int
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
 }
