@@ -1,10 +1,9 @@
 import express from "express";
+import { register } from "../controllers/authController.js";
 
 const router = express.Router();
 
-// MUST match frontend: /signup
-router.post("/signup", (req, res) => {
-    res.json({ message: "Signup works" });
-});
+// ✅ matches frontend axios: /auth/signup
+router.post("/signup", register);
 
 export default router;
