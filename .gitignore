@@ -1,16 +1,17 @@
-# Dependencies
-node_modules/
+# Frontend
+Frontend/node_modules/
+Frontend/dist/
+Frontend/.env
+Frontend/.env.local
+Frontend/.env.*.local
 
-# Build output
-dist/
+# Backend
+Backend/node_modules/
+Backend/dist/
+Backend/.env
 
 # Vite cache
-.vite/
-
-# Local env files
-.env
-.env.local
-.env.*.local
+Frontend/.vite/
 
 # Editor
 .vscode/
