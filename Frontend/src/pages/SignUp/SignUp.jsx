@@ -91,12 +91,17 @@ export default function SignUp() {
 
       // ✅ Save real token from backend
       localStorage.setItem("token", res.data.token);
-
-      // (optional) save user
       localStorage.setItem("user", JSON.stringify(res.data.user));
 
-      // ✅ Redirect
-      navigate("/dashboard");
+      // Redirect based on role
+      const role = res.data.user.role?.toUpperCase()
+      if (role === 'ADMIN') {
+        navigate('/admin/dashboard')
+      } else if (role === 'INSTRUCTOR') {
+        navigate('/instructor/dashboard')
+      } else {
+        navigate('/dashboard')
+      }
 
     } catch (err) {
       setApiError(

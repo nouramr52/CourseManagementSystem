@@ -1,4 +1,16 @@
 // =====================
+// DATASOURCE & GENERATOR
+// =====================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+}
+
+// =====================
 // ENUMS
 // =====================
 
@@ -34,9 +46,10 @@ model User {
   createdAt DateTime @default(now())
 
   // Relations
-  coursesCreated Course[]        @relation("InstructorCourses")
-  enrollments    Enrollment[]
-  submissions    Submission[]
+  coursesCreated    Course[]     @relation("InstructorCourses")
+  enrollments       Enrollment[]
+  submissions       Submission[]
+  uploadedMaterials Material[]   @relation("UploadedMaterials")
 }
 
 // =====================
@@ -56,6 +69,7 @@ model Course {
   // Relations
   enrollments Enrollment[]
   assignments Assignment[]
+  materials   Material[]
 }
 
 // =====================
@@ -114,4 +128,31 @@ model Submission {
   student    User       @relation(fields: [studentId], references: [id])
 
   @@unique([assignmentId, studentId]) // one submission per student per assignment
+}
+
+// =====================
+// MATERIAL
+// =====================
+
+enum MaterialType {
+  PDF
+  PPT
+  DOC
+  ZIP
+  LINK
+}
+
+model Material {
+  id           Int          @id @default(autoincrement())
+  title        String
+  type         MaterialType
+  url          String       // Supabase Storage public URL (for files) or external link (for LINK type)
+  storagePath  String?      // Supabase Storage path, only set for uploaded files (not LINK type)
+  courseId     Int
+  uploadedById Int
+  createdAt    DateTime     @default(now())
+
+  // Relations
+  course      Course @relation(fields: [courseId], references: [id])
+  uploadedBy  User   @relation("UploadedMaterials", fields: [uploadedById], references: [id])
 }
