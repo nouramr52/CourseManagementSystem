@@ -308,3 +308,29 @@
   padding: 2.5rem !important;
   font-size: 0.9rem;
 }
+
+/* Drag & drop active / has-file states */
+.um-form__drop--active {
+  border-color: var(--primary);
+  background: #f0f4ff;
+}
+
+.um-form__drop--has-file {
+  border-color: #10b981;
+  background: #f0fdf4;
+}
+
+.mc-empty {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 2.5rem !important;
+  font-size: 0.9rem;
+}
+
+.mc-date {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.um-btn--edit { background: #f0fdf4; color: #16a34a; }
+.um-btn--edit:hover { background: #dcfce7; }

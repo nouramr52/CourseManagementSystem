@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import './Sidebar.css'
 
 const navItems = [
@@ -11,6 +12,13 @@ const navItems = [
 
 export default function Sidebar({ active, onNavigate }) {
   const [collapsed, setCollapsed] = useState(false)
+  const navigate = useNavigate()
+
+  const handleLogout = () => {
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    navigate('/login')
+  }
 
   return (
     <aside className={`sidebar ${collapsed ? 'sidebar--collapsed' : ''}`}>
@@ -52,7 +60,7 @@ export default function Sidebar({ active, onNavigate }) {
       </button>
 
       {/* Logout */}
-      <button className="sidebar__logout">
+      <button className="sidebar__logout" onClick={handleLogout}>
         <span>🚪</span>
         {!collapsed && <span>Logout</span>}
       </button>

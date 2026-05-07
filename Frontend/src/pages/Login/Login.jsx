@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import './Login.css'
+import { loginUser } from '../../api/authApi'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -16,7 +17,6 @@ export default function Login() {
   const [loginAsStudent, setLoginAsStudent] = useState(false)
 
   useEffect(() => {
-    // Check if coming from "Login as Student" button
     if (location.state?.role === 'student') {
       setLoginAsStudent(true)
     }
@@ -24,21 +24,16 @@ export default function Login() {
 
   const validateForm = () => {
     const newErrors = {}
-
-    // Email validation
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required'
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'Please enter a valid email address'
     }
-
-    // Password validation
     if (!formData.password) {
       newErrors.password = 'Password is required'
     } else if (formData.password.length < 6) {
       newErrors.password = 'Password must be at least 6 characters'
     }
-
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -46,61 +41,37 @@ export default function Login() {
   const handleChange = (e) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
-    // Clear error for this field when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }))
-    }
-    // Clear API error when user starts typing
-    if (apiError) {
-      setApiError('')
-    }
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }))
+    if (apiError) setApiError('')
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     setApiError('')
-
-    if (!validateForm()) {
-      return
-    }
+    if (!validateForm()) return
 
     setIsLoading(true)
+    try {
+      const res = await loginUser({ email: formData.email, password: formData.password })
+      const { user, token } = res.data
 
-    // Simulate loading for better UX
-    setTimeout(() => {
-      try {
-        // Get all registered users
-        const existingUsers = JSON.parse(localStorage.getItem('users') || '[]')
-        
-        // Find user by email
-        const user = existingUsers.find(u => u.email === formData.email)
+      localStorage.setItem('token', token)
+      localStorage.setItem('user', JSON.stringify(user))
 
-        if (!user) {
-          setApiError('No account found with this email. Please sign up first.')
-          setIsLoading(false)
-          return
-        }
-
-        // If logging in as student, check if user is actually a student
-        if (loginAsStudent && user.role !== 'student') {
-          setApiError('This account is not a student account. Please use regular login.')
-          setIsLoading(false)
-          return
-        }
-
-        // Create a simple token (just for frontend)
-        const token = btoa(JSON.stringify({ userId: user.id, email: user.email }))
-        localStorage.setItem('token', token)
-        localStorage.setItem('user', JSON.stringify(user))
-
-        // Navigate to dashboard
+      // Redirect based on role
+      const role = user.role?.toUpperCase()
+      if (role === 'ADMIN') {
+        navigate('/admin/dashboard')
+      } else if (role === 'INSTRUCTOR') {
+        navigate('/instructor/dashboard')
+      } else {
         navigate('/dashboard')
-      } catch (error) {
-        setApiError('Login failed. Please try again.')
-      } finally {
-        setIsLoading(false)
       }
-    }, 800) // Simulate network delay
+    } catch (err) {
+      setApiError(err.response?.data?.message || 'Login failed. Please try again.')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
