@@ -10,6 +10,8 @@ import StudentCourses from '../pages/StudentCourses/StudentCourses'
 import MyCourses from '../pages/MyCourses/MyCourses'
 import StudentSchedule from '../pages/StudentSchedule/StudentSchedule'
 import AdminDashboard from '../pages/AdminDashboard/AdminDashboard'
+import AuthCallback from '../pages/AuthCallback/AuthCallback'
+import CompleteProfile from '../pages/CompleteProfile/CompleteProfile'
 
 
 
@@ -28,6 +30,8 @@ export default function AppRoutes() {
       <Route path="/student/schedule" element={<StudentSchedule />} />
       <Route path="/instructor/dashboard" element={<InstructorDashboard />} />
       <Route path="/admin/dashboard" element={<AdminDashboard />} />
+      <Route path="/auth/callback" element={<AuthCallback />} />
+      <Route path="/complete-profile" element={<CompleteProfile />} />
     </Routes>
     
   )
