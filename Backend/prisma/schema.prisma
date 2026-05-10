@@ -1,5 +1,5 @@
 // =====================
-// PRISMA CONFIG
+// DATASOURCE & GENERATOR
 // =====================
 
 generator client {
@@ -8,8 +8,6 @@ generator client {
 
 datasource db {
   provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
 }
 
 // =====================
@@ -34,64 +32,18 @@ enum EnrollmentStatus {
 // =====================
 
 model User {
-  id       Int    @id @default(autoincrement())
-  name     String
-  email    String @unique
-  password String
-  role     Role   @default(STUDENT)
-
-  // IS A relations
-  student    Student?
-  instructor Instructor?
-  admin      Admin?
-}
-
-// =====================
-// STUDENT (IS A User)
-// Fields: student_id, user_id, major, year
-// =====================
-
-model Student {
-  id     Int    @id @default(autoincrement())
-  major  String?
-  year   Int?
-
-  // IS A User
-  userId Int  @unique
-  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String?
+  role      Role     @default(STUDENT)
+  createdAt DateTime @default(now())
 
   // Relations
-  enrollments Enrollment[]
-}
-
-// =====================
-// INSTRUCTOR (IS A User)
-// Fields: instructor_id, user_id, department
-// =====================
-
-model Instructor {
-  id         Int     @id @default(autoincrement())
-  department String?
-
-  // IS A User
-  userId Int  @unique
-  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Relations
-  courses Course[]
-}
-
-// =====================
-// ADMIN (IS A User)
-// Fields: admin_id, user_id
-// =====================
-
-model Admin {
-  id Int @id @default(autoincrement())
-
-  // IS A User
-  userId Int  @unique
-  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  coursesCreated    Course[]     @relation("InstructorCourses")
+  enrollments       Enrollment[]
+  submissions       Submission[]
+  uploadedMaterials Material[]   @relation("UploadedMaterials")
 }
 
 // =====================
@@ -111,8 +63,8 @@ model Course {
 
   // Relations
   enrollments Enrollment[]
+  assignments Assignment[]
   materials   Material[]
-  schedules   Schedule[]
 }
 
 // =====================
@@ -162,7 +114,39 @@ model Schedule {
   endTime   String // e.g. "11:30"
   room      String?
 
-  // Belongs to one Course
-  courseId Int
-  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  // Relations
+  assignmentId Int
+  studentId    Int
+
+  assignment Assignment @relation(fields: [assignmentId], references: [id])
+  student    User       @relation(fields: [studentId], references: [id])
+
+  @@unique([assignmentId, studentId]) // one submission per student per assignment
+}
+
+// =====================
+// MATERIAL
+// =====================
+
+enum MaterialType {
+  PDF
+  PPT
+  DOC
+  ZIP
+  LINK
+}
+
+model Material {
+  id           Int          @id @default(autoincrement())
+  title        String
+  type         MaterialType
+  url          String       // Supabase Storage public URL (for files) or external link (for LINK type)
+  storagePath  String?      // Supabase Storage path, only set for uploaded files (not LINK type)
+  courseId     Int
+  uploadedById Int
+  createdAt    DateTime     @default(now())
+
+  // Relations
+  course      Course @relation(fields: [courseId], references: [id])
+  uploadedBy  User   @relation("UploadedMaterials", fields: [uploadedById], references: [id])
 }

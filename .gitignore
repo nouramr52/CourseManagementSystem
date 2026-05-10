@@ -10,6 +10,9 @@ Backend/node_modules/
 Backend/dist/
 Backend/.env
 
+# Node modules (root level catch-all)
+node_modules/
+
 # Vite cache
 Frontend/.vite/
 
