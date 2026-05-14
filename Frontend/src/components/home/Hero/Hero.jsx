@@ -29,14 +29,14 @@ export default function Hero() {
           </p>
 
           <div className="hero__actions">
-            <button className="hero__btn hero__btn--primary" onClick={() => navigate('/login', { state: { role: 'student' } })}>
-              Login as Student
+            <button className="hero__btn hero__btn--primary" onClick={() => navigate('/login')}>
+              Sign In
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3" />
               </svg>
             </button>
             <button className="hero__btn hero__btn--secondary" onClick={() => navigate('/signup')}>
-              Create Account
+              Create Free Account
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM19 8v6M22 11h-6" />
               </svg>
@@ -46,9 +46,8 @@ export default function Hero() {
           {/* Role badges */}
           <div className="hero__roles">
             {[
-              { emoji: '🎓', label: 'Student', color: '#4f46e5', bg: '#eef2ff' },
+              { emoji: '🎓', label: 'Student',    color: '#4f46e5', bg: '#eef2ff' },
               { emoji: '👨‍🏫', label: 'Instructor', color: '#06b6d4', bg: '#ecfeff' },
-              { emoji: '🛡️', label: 'Admin', color: '#8b5cf6', bg: '#f5f3ff' },
             ].map((r) => (
               <div key={r.label} className="hero__role-badge" style={{ background: r.bg, color: r.color }}>
                 <span>{r.emoji}</span>

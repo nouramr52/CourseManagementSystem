@@ -8,6 +8,8 @@ generator client {
 
 datasource db {
   provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 // =====================
@@ -27,49 +29,50 @@ enum EnrollmentStatus {
 }
 
 // =====================
-// USER (base entity)
-// Fields: user_id, name, email, password, role
+// USER
+// role field tells us if this user is a STUDENT, INSTRUCTOR, or ADMIN
+// no separate tables needed
 // =====================
 
 model User {
   id        Int      @id @default(autoincrement())
   name      String
   email     String   @unique
-  password  String?
+  password  String?                   // nullable for Google sign-in users
   role      Role     @default(STUDENT)
   createdAt DateTime @default(now())
 
-  // Relations
-  coursesCreated    Course[]     @relation("InstructorCourses")
-  enrollments       Enrollment[]
-  submissions       Submission[]
-  uploadedMaterials Material[]   @relation("UploadedMaterials")
+  // A user with role INSTRUCTOR can own many courses
+  coursesCreated Course[]     @relation("InstructorCourses")
+
+  // A user with role STUDENT can have many enrollments
+  enrollments    Enrollment[]
 }
 
 // =====================
 // COURSE
-// Fields: course_id, title, description, capacity, instructor_id
 // =====================
 
 model Course {
-  id           Int     @id @default(autoincrement())
+  id           Int      @id @default(autoincrement())
   title        String
   description  String?
-  capacity     Int
+  capacity     Int      @default(30)
+  dept         String?  // e.g. "Computer Science"
+  icon         String?  // emoji icon e.g. "🗄️"
+  createdAt    DateTime @default(now())
 
-  // Taught by one Instructor
+  // The instructor who owns this course (must be a User with role INSTRUCTOR)
   instructorId Int
-  instructor   Instructor @relation(fields: [instructorId], references: [id])
+  instructor   User @relation("InstructorCourses", fields: [instructorId], references: [id])
 
-  // Relations
   enrollments Enrollment[]
-  assignments Assignment[]
   materials   Material[]
+  schedules   Schedule[]
 }
 
 // =====================
-// ENROLLMENT (ENROLS relationship)
-// Fields: enrollment_id, student_id, course_id, enrollment_date, status
+// ENROLLMENT  (Student enrolls in Course)
 // =====================
 
 model Enrollment {
@@ -77,76 +80,41 @@ model Enrollment {
   enrollmentDate DateTime         @default(now())
   status         EnrollmentStatus @default(ACTIVE)
 
-  // Student enrolls in Course
+  // The student (User with role STUDENT) who enrolled
   studentId Int
   courseId  Int
 
-  student Student @relation(fields: [studentId], references: [id])
-  course  Course  @relation(fields: [courseId], references: [id])
+  student User   @relation(fields: [studentId], references: [id])
+  course  Course @relation(fields: [courseId], references: [id])
 
-  @@unique([studentId, courseId]) // prevent duplicate enrollment
+  @@unique([studentId, courseId])   // one enrollment per student per course
 }
 
 // =====================
-// MATERIAL (CONTAINS relationship)
-// Fields: material_id, course_id, title, file_path
+// MATERIAL  (Course contains materials)
 // =====================
 
 model Material {
-  id       Int    @id @default(autoincrement())
-  title    String
-  filePath String?
+  id        Int      @id @default(autoincrement())
+  title     String
+  filePath  String?
+  createdAt DateTime @default(now())
 
-  // Belongs to one Course
   courseId Int
   course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
 }
 
 // =====================
-// SCHEDULE (HAS A relationship — Course has a Schedule)
-// Fields: schedule_id, course_id, day, start_time, end_time, room
+// SCHEDULE  (Course has schedule slots)
 // =====================
 
 model Schedule {
-  id        Int    @id @default(autoincrement())
-  day       String // e.g. "Monday", "Tuesday"
-  startTime String // e.g. "10:00"
-  endTime   String // e.g. "11:30"
+  id        Int     @id @default(autoincrement())
+  day       String  // e.g. "Monday"
+  startTime String  // e.g. "10:00"
+  endTime   String  // e.g. "11:30"
   room      String?
 
-  // Relations
-  assignmentId Int
-  studentId    Int
-
-  assignment Assignment @relation(fields: [assignmentId], references: [id])
-  student    User       @relation(fields: [studentId], references: [id])
-
-  @@unique([assignmentId, studentId]) // one submission per student per assignment
-}
-
-// =====================
-// MATERIAL
-// =====================
-
-enum MaterialType {
-  PDF
-  PPT
-  DOC
-  ZIP
-  LINK
-}
-
-model Material {
-  id           Int          @id @default(autoincrement())
-  title        String
-  type         MaterialType
-  url          String       // Supabase Storage public URL (for files) or external link (for LINK type)
-  storagePath  String?      // Supabase Storage path, only set for uploaded files (not LINK type)
-  courseId     Int
-  uploadedById Int
-  createdAt    DateTime     @default(now())
-
-  // Relations
-  course      Course @relation(fields: [courseId], references: [id])
-  uploadedBy  User   @relation("UploadedMaterials", fields: [uploadedById], references: [id])
+  courseId Int
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
 }

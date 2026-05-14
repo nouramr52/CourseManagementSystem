@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import './Roles.css'
 
 const roles = [
@@ -17,7 +18,8 @@ const roles = [
       'View personal schedule',
       'Access course materials',
     ],
-    cta: 'Login as Student',
+    cta: 'Sign In',
+    ctaLink: '/login',
   },
   {
     id: 'instructor',
@@ -33,7 +35,8 @@ const roles = [
       'View enrolled students',
       'View assigned courses',
     ],
-    cta: 'Login as Instructor',
+    cta: 'Sign In',
+    ctaLink: '/login',
   },
   {
     id: 'admin',
@@ -50,12 +53,14 @@ const roles = [
       'Manage schedules',
       'Assign instructors to courses',
     ],
-    cta: 'Login as Admin',
+    cta: null,   // Admin access is by invitation only — no public login button
+    ctaLink: null,
   },
 ]
 
 export default function Roles() {
   const [active, setActive] = useState('student')
+  const navigate = useNavigate()
   const role = roles.find((r) => r.id === active)
 
   return (
@@ -104,12 +109,15 @@ export default function Roles() {
                 </li>
               ))}
             </ul>
-            <button
-              className="roles__cta"
-              style={{ background: role.color, boxShadow: `0 4px 14px ${role.color}55` }}
-            >
-              {role.cta} →
-            </button>
+            {role.cta && (
+              <button
+                className="roles__cta"
+                style={{ background: role.color, boxShadow: `0 4px 14px ${role.color}55` }}
+                onClick={() => role.ctaLink && navigate(role.ctaLink)}
+              >
+                {role.cta} →
+              </button>
+            )}
           </div>
 
           <div className="roles__illustration">

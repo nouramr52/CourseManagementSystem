@@ -35,6 +35,8 @@ export default function Navbar() {
   const handleLogout = () => {
     localStorage.removeItem('token')
     localStorage.removeItem('user')
+    // Dispatch a storage event so Home.jsx re-checks auth in the same tab
+    window.dispatchEvent(new Event('storage'))
     setIsLoggedIn(false)
     setUser(null)
     navigate('/')
@@ -58,7 +60,19 @@ export default function Navbar() {
         <nav className="navbar__nav">
           <a href="/" className="navbar__link" onClick={(e) => { e.preventDefault(); navigate('/') }}>Home</a>
           {isLoggedIn && (
-            <a href="/dashboard" className="navbar__link" onClick={(e) => { e.preventDefault(); navigate('/dashboard') }}>Dashboard</a>
+            <a
+              href="/dashboard"
+              className="navbar__link"
+              onClick={(e) => {
+                e.preventDefault()
+                const role = user?.role?.toUpperCase()
+                if (role === 'ADMIN') navigate('/admin/dashboard')
+                else if (role === 'INSTRUCTOR') navigate('/instructor/dashboard')
+                else navigate('/dashboard')
+              }}
+            >
+              Dashboard
+            </a>
           )}
         </nav>
 

@@ -524,3 +524,43 @@
     bottom: 1rem;
   }
 }
+
+/* ── Shared card utilities (mirrors LoggedInHome) ─────────────────────────── */
+
+/* Short description under title */
+.lh-card-desc {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Two-button layout when enrolled */
+.lh-card-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: auto;
+}
+
+.lh-card-actions .course-card__btn {
+  flex: 1;
+  margin-top: 0;
+}
+
+.lh-drop-btn {
+  padding: 0.65rem 0.9rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  background: #fef2f2;
+  color: #ef4444;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.lh-drop-btn:hover { background: #fee2e2; }

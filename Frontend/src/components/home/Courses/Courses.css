@@ -188,3 +188,30 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Loading skeletons */
+.courses__loading {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+.courses__skeleton {
+  height: 380px;
+  border-radius: var(--radius);
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: courses-shimmer 1.4s infinite;
+}
+
+@keyframes courses-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@media (max-width: 900px) {
+  .courses__loading { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 560px) {
+  .courses__loading { grid-template-columns: 1fr; }
+}

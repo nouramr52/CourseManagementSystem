@@ -75,22 +75,30 @@ export default function Dashboard() {
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-
     const rawUser = localStorage.getItem('user');
 
     let parsedUser = null;
-
     try {
       if (rawUser && rawUser !== "undefined") {
         parsedUser = JSON.parse(rawUser);
       }
     } catch (err) {
-      console.log("Invalid user in localStorage:", err);
-      localStorage.removeItem("user"); // clean bad data
+      localStorage.removeItem("user");
     }
 
     if (!token) {
       navigate('/login');
+      return;
+    }
+
+    // Redirect non-students to their correct dashboard
+    const role = parsedUser?.role?.toUpperCase();
+    if (role === 'ADMIN') {
+      navigate('/admin/dashboard');
+      return;
+    }
+    if (role === 'INSTRUCTOR') {
+      navigate('/instructor/dashboard');
       return;
     }
 

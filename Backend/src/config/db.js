@@ -1,17 +1,7 @@
-import pkg from "@prisma/client";
-const { PrismaClient } = pkg;
-import { PrismaPg } from "@prisma/adapter-pg";
-import pg from "pg";
-import dotenv from "dotenv";
+import { PrismaClient } from "@prisma/client";
 
-dotenv.config();
-
-const pool = new pg.Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false },
-});
-
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
+// Create one single PrismaClient instance for the whole app.
+// Prisma reads DATABASE_URL from .env automatically.
+const prisma = new PrismaClient();
 
 export default prisma;
