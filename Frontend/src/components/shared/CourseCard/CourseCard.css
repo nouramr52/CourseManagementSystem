@@ -1,0 +1,86 @@
+/* ── Enrolled ribbon ─────────────────────────────────────────────────────── */
+.cc-ribbon {
+  position: absolute;
+  top: 12px;
+  right: -24px;
+  background: #4f46e5;
+  color: white;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.22rem 2.2rem;
+  transform: rotate(45deg);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+/* ── Description ─────────────────────────────────────────────────────────── */
+.cc-desc {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ── Action button row ───────────────────────────────────────────────────── */
+.cc-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: auto;
+}
+
+.cc-actions .course-card__btn {
+  flex: 1;
+  margin-top: 0;
+}
+
+/* Primary (coloured fill) */
+.cc-btn--primary {
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.cc-btn--primary:hover:not(:disabled) {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+/* Outline (white bg, border) */
+.cc-btn--outline {
+  background: white !important;
+  color: var(--text) !important;
+  border: 1.5px solid var(--border) !important;
+  cursor: pointer;
+}
+
+.cc-btn--outline:hover {
+  border-color: var(--primary) !important;
+  color: var(--primary) !important;
+}
+
+/* Drop (red tint) */
+.cc-btn--drop {
+  background: #fef2f2 !important;
+  color: #ef4444 !important;
+  border: 1.5px solid #fecaca !important;
+  cursor: pointer;
+  white-space: nowrap;
+  flex: 0 0 auto !important;
+  padding: 0.65rem 0.9rem !important;
+}
+
+.cc-btn--drop:hover {
+  background: #fee2e2 !important;
+}
+
+/* Disabled (full) */
+.cc-btn--disabled {
+  background: #f1f5f9 !important;
+  color: #94a3b8 !important;
+  border: none !important;
+  cursor: not-allowed !important;
+}

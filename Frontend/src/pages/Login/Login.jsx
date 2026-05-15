@@ -59,14 +59,14 @@ export default function Login() {
       localStorage.setItem('token', token)
       localStorage.setItem('user', JSON.stringify(user))
 
-      // Redirect based on role
+      // Redirect to home — LoggedInHome handles role-based content
       const role = user.role?.toUpperCase()
       if (role === 'ADMIN') {
         navigate('/admin/dashboard')
       } else if (role === 'INSTRUCTOR') {
         navigate('/instructor/dashboard')
       } else {
-        navigate('/dashboard')
+        navigate('/')
       }
     } catch (err) {
       setApiError(err.response?.data?.message || 'Login failed. Please try again.')

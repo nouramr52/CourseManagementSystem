@@ -20,7 +20,7 @@ export const registerUser = async (data) => {
     );
 
     return {
-        user: { id: newUser.id, name: newUser.name, email: newUser.email, role: newUser.role },
+        user: { id: newUser.id, name: newUser.name, email: newUser.email, role: newUser.role, createdAt: newUser.createdAt },
         token
     };
 };
@@ -51,6 +51,7 @@ export const loginUser = async ({ email, password }) => {
             name: user.name,
             email: user.email,
             role: user.role,
+            createdAt: user.createdAt,
         },
         token,
     };
@@ -74,7 +75,7 @@ export const googleAuthUser = async (accessToken) => {
     );
 
     return {
-        user: { id: user.id, name: user.name, email: user.email, role: user.role },
+        user: { id: user.id, name: user.name, email: user.email, role: user.role, createdAt: user.createdAt },
         token,
         isNewUser,
     };
@@ -96,7 +97,7 @@ export const completeUserProfile = async (userId, role) => {
     );
 
     return {
-        user: { id: user.id, name: user.name, email: user.email, role: user.role },
+        user: { id: user.id, name: user.name, email: user.email, role: user.role, createdAt: user.createdAt },
         token,
     };
 };

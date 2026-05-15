@@ -375,3 +375,66 @@
     justify-content: center;
   }
 }
+
+/* ── Real-data additions ─────────────────────────────────────────────────── */
+
+/* Skeleton cards */
+.ds-course-skeleton {
+  height: 220px;
+  border-radius: var(--radius);
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: ds-shimmer 1.4s infinite;
+}
+
+@keyframes ds-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Empty state */
+.ds-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 4rem 2rem;
+  background: white;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+.ds-empty span { font-size: 2.5rem; }
+
+.ds-empty-btn {
+  margin-top: 0.5rem;
+  padding: 0.65rem 1.5rem;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+
+.ds-empty-btn:hover { background: var(--primary-dark); transform: translateY(-1px); }
+
+/* Error state */
+.ds-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 3rem 2rem;
+  color: #dc2626;
+  text-align: center;
+  font-size: 0.95rem;
+}
+
+.ds-error span { font-size: 2rem; }

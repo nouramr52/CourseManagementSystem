@@ -1,117 +1,67 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Navbar from '../../components/shared/Navbar/Navbar'
 import Footer from '../../components/shared/Footer/Footer'
+import { getMyEnrollments } from '../../api/enrollmentApi'
+import { getMe } from '../../api/userApi'
 import './Dashboard.css'
 import './DashboardStudent.css'
 
+// Consistent colour palette per course (cycles through)
+const COLORS = ['#4f46e5', '#06b6d4', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444']
+const ICONS  = ['📖', '⚙️', '🌐', '💻', '🔐', '📊', '🤖', '📚']
+
+const DEPT_COLORS = {
+  'Computer Science':        '#4f46e5',
+  'Software Engineering':    '#06b6d4',
+  'Information Systems':     '#10b981',
+  'Data Science':            '#f59e0b',
+  'Artificial Intelligence': '#8b5cf6',
+  'Cybersecurity':           '#ef4444',
+  'Networking':              '#06b6d4',
+  'Mathematics':             '#10b981',
+  'General':                 '#4f46e5',
+}
+
 export default function Dashboard() {
   const navigate = useNavigate()
-  const [user, setUser] = useState(null)
-
-  // Sample course data
-  const [courses] = useState([
-    {
-      id: 1,
-      name: 'Database Systems',
-      instructor: 'Dr. Sarah Johnson',
-      progress: 75,
-      schedule: 'Mon / Wed',
-      time: '10:00 AM',
-      color: '#4f46e5',
-      assignments: 8,
-      completedAssignments: 6,
-      nextClass: 'Monday, 10:00 AM',
-      description: 'Learn database design, SQL, and data management',
-      modules: 12,
-      completedModules: 9
-    },
-    {
-      id: 2,
-      name: 'Software Engineering',
-      instructor: 'Prof. Michael Chen',
-      progress: 60,
-      schedule: 'Tue / Thu',
-      time: '1:00 PM',
-      color: '#06b6d4',
-      assignments: 10,
-      completedAssignments: 6,
-      nextClass: 'Tuesday, 1:00 PM',
-      description: 'Software development lifecycle and best practices',
-      modules: 15,
-      completedModules: 9
-    },
-    {
-      id: 3,
-      name: 'Operating Systems',
-      instructor: 'Dr. Emily Rodriguez',
-      progress: 45,
-      schedule: 'Mon / Fri',
-      time: '3:00 PM',
-      color: '#10b981',
-      assignments: 6,
-      completedAssignments: 3,
-      nextClass: 'Monday, 3:00 PM',
-      description: 'OS concepts, processes, and memory management',
-      modules: 10,
-      completedModules: 4
-    },
-    {
-      id: 4,
-      name: 'Web Development',
-      instructor: 'Prof. David Kim',
-      progress: 90,
-      schedule: 'Wed / Fri',
-      time: '11:00 AM',
-      color: '#8b5cf6',
-      assignments: 12,
-      completedAssignments: 11,
-      nextClass: 'Wednesday, 11:00 AM',
-      description: 'Modern web technologies and frameworks',
-      modules: 14,
-      completedModules: 13
-    }
-  ])
+  const [user,        setUser]        = useState(null)
+  const [enrollments, setEnrollments] = useState([])
+  const [loading,     setLoading]     = useState(true)
+  const [error,       setError]       = useState(null)
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const rawUser = localStorage.getItem('user');
+    const token   = localStorage.getItem('token')
+    const rawUser = localStorage.getItem('user')
+    let parsed    = null
 
-    let parsedUser = null;
     try {
-      if (rawUser && rawUser !== "undefined") {
-        parsedUser = JSON.parse(rawUser);
-      }
-    } catch (err) {
-      localStorage.removeItem("user");
-    }
+      if (rawUser && rawUser !== 'undefined') parsed = JSON.parse(rawUser)
+    } catch { localStorage.removeItem('user') }
 
-    if (!token) {
-      navigate('/login');
-      return;
-    }
+    if (!token) { navigate('/login'); return }
 
-    // Redirect non-students to their correct dashboard
-    const role = parsedUser?.role?.toUpperCase();
-    if (role === 'ADMIN') {
-      navigate('/admin/dashboard');
-      return;
-    }
-    if (role === 'INSTRUCTOR') {
-      navigate('/instructor/dashboard');
-      return;
-    }
+    const role = parsed?.role?.toUpperCase()
+    if (role === 'ADMIN')       { navigate('/admin/dashboard');      return }
+    if (role === 'INSTRUCTOR')  { navigate('/instructor/dashboard'); return }
 
-    setUser(parsedUser);
-  }, [navigate]);
+    setUser(parsed)
 
-  const totalAssignments = courses.reduce((sum, course) => sum + course.assignments, 0)
-  const completedAssignments = courses.reduce((sum, course) => sum + course.completedAssignments, 0)
-  const averageProgress = Math.round(courses.reduce((sum, course) => sum + course.progress, 0) / courses.length)
-
-  const handleCourseClick = (courseId) => {
-    navigate(`/course/${courseId}`)
-  }
+    // Load fresh user (for createdAt) + enrollments in parallel.
+    // getMe() failing (e.g. server not restarted yet) must NOT block enrollments.
+    Promise.allSettled([getMe(), getMyEnrollments()])
+      .then(([meResult, enrollResult]) => {
+        if (meResult.status === 'fulfilled') {
+          setUser(prev => ({ ...prev, ...meResult.value.data }))
+        }
+        if (enrollResult.status === 'fulfilled') {
+          setEnrollments(enrollResult.value.data.filter(e => e.status === 'ACTIVE'))
+        } else {
+          setError('Failed to load your courses.')
+        }
+      })
+      .finally(() => setLoading(false))
+  }, [navigate])
 
   if (!user) {
     return (
@@ -121,62 +71,77 @@ export default function Dashboard() {
     )
   }
 
+  // ── Derived stats ──────────────────────────────────────────────────────────
+  const totalCourses   = enrollments.length
+  const totalScheduled = enrollments.reduce((n, e) => n + (e.course?.schedules?.length ?? 0), 0)
+
+  // Next upcoming class — find the earliest schedule slot by day order
+  const DAY_ORDER = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']
+  const allSlots = enrollments.flatMap(e =>
+    (e.course?.schedules ?? []).map(s => ({ ...s, courseTitle: e.course.title }))
+  )
+  const nextSlot = allSlots.sort(
+    (a, b) => DAY_ORDER.indexOf(a.day) - DAY_ORDER.indexOf(b.day)
+  )[0]
+
   return (
     <>
       <Navbar />
       <main className="dashboard">
         <div className="dashboard__container">
+
+          {/* Header */}
           <div className="dashboard__header">
             <div>
               <h1 className="dashboard__title">
-                Welcome back, <span className="dashboard__highlight">{user.name || 'User'}</span>!
+                Welcome back, <span className="dashboard__highlight">{user.name || 'Student'}</span>!
               </h1>
               <p className="dashboard__subtitle">
-                Here's your learning progress and upcoming classes.
+                Here's your learning overview and enrolled courses.
               </p>
             </div>
           </div>
 
-          {/* Stats Cards */}
+          {/* ── Stat Cards ── */}
           <div className="dashboard__grid">
             <div className="dashboard__card">
-              <div className="dashboard__card-icon" style={{ background: '#eef2ff', color: '#4f46e5' }}>
-                📚
-              </div>
+              <div className="dashboard__card-icon" style={{ background: '#eef2ff', color: '#4f46e5' }}>📚</div>
               <h3 className="dashboard__card-title">Enrolled Courses</h3>
-              <p className="dashboard__card-value">{courses.length}</p>
-              <p className="dashboard__card-label">Active courses</p>
+              <p className="dashboard__card-value">{loading ? '—' : totalCourses}</p>
+              <p className="dashboard__card-label">Active enrollments</p>
             </div>
 
             <div className="dashboard__card">
-              <div className="dashboard__card-icon" style={{ background: '#f0fdf4', color: '#10b981' }}>
-                ✅
-              </div>
-              <h3 className="dashboard__card-title">Completed</h3>
-              <p className="dashboard__card-value">{completedAssignments}</p>
-              <p className="dashboard__card-label">Out of {totalAssignments} assignments</p>
+              <div className="dashboard__card-icon" style={{ background: '#ecfeff', color: '#06b6d4' }}>🗓️</div>
+              <h3 className="dashboard__card-title">Weekly Sessions</h3>
+              <p className="dashboard__card-value">{loading ? '—' : totalScheduled}</p>
+              <p className="dashboard__card-label">Classes per week</p>
             </div>
 
             <div className="dashboard__card">
-              <div className="dashboard__card-icon" style={{ background: '#fef3c7', color: '#f59e0b' }}>
-                ⏰
-              </div>
-              <h3 className="dashboard__card-title">Pending</h3>
-              <p className="dashboard__card-value">{totalAssignments - completedAssignments}</p>
-              <p className="dashboard__card-label">Tasks remaining</p>
+              <div className="dashboard__card-icon" style={{ background: '#ecfdf5', color: '#10b981' }}>⏰</div>
+              <h3 className="dashboard__card-title">Next Class</h3>
+              <p className="dashboard__card-value" style={{ fontSize: '1.1rem' }}>
+                {loading ? '—' : nextSlot ? nextSlot.day : 'None'}
+              </p>
+              <p className="dashboard__card-label">
+                {loading ? '' : nextSlot ? `${nextSlot.startTime} · ${nextSlot.courseTitle}` : 'No upcoming classes'}
+              </p>
             </div>
 
             <div className="dashboard__card">
-              <div className="dashboard__card-icon" style={{ background: '#ecfeff', color: '#06b6d4' }}>
-                📊
-              </div>
-              <h3 className="dashboard__card-title">Average Progress</h3>
-              <p className="dashboard__card-value">{averageProgress}%</p>
-              <p className="dashboard__card-label">Overall completion</p>
+              <div className="dashboard__card-icon" style={{ background: '#fef3c7', color: '#f59e0b' }}>🎓</div>
+              <h3 className="dashboard__card-title">Member Since</h3>
+              <p className="dashboard__card-value" style={{ fontSize: '1.1rem' }}>
+                {user.createdAt
+                  ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+                  : '—'}
+              </p>
+              <p className="dashboard__card-label">Account created</p>
             </div>
           </div>
 
-          {/* Student Quick Access */}
+          {/* ── Quick Access ── */}
           <div className="dashboard__section">
             <div className="dashboard__section-header">
               <h2 className="dashboard__section-title">Student Portal</h2>
@@ -216,110 +181,149 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Course Progress Section */}
+          {/* ── My Courses ── */}
           <div className="dashboard__section">
             <div className="dashboard__section-header">
               <h2 className="dashboard__section-title">My Courses</h2>
-              <p className="dashboard__section-subtitle">Click on a course to view details</p>
+              <p className="dashboard__section-subtitle">Your currently enrolled courses</p>
             </div>
 
-            <div className="dashboard__courses">
-              {courses.map((course) => (
-                <div
-                  key={course.id}
-                  className="course-card"
-                  onClick={() => handleCourseClick(course.id)}
-                >
-                  <div className="course-card__header">
-                    <div className="course-card__icon" style={{ background: `${course.color}15`, color: course.color }}>
-                      📖
-                    </div>
-                    <div className="course-card__info">
-                      <h3 className="course-card__title">{course.name}</h3>
-                      <p className="course-card__instructor">{course.instructor}</p>
-                    </div>
-                    <div className="course-card__progress-badge" style={{ background: `${course.color}15`, color: course.color }}>
-                      {course.progress}%
-                    </div>
-                  </div>
+            {loading ? (
+              <div className="dashboard__courses">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="ds-course-skeleton" />
+                ))}
+              </div>
+            ) : error ? (
+              <div className="ds-error">
+                <span>⚠️</span>
+                <p>{error}</p>
+              </div>
+            ) : enrollments.length === 0 ? (
+              <div className="ds-empty">
+                <span>🎓</span>
+                <p>You haven't enrolled in any courses yet.</p>
+                <button className="ds-empty-btn" onClick={() => navigate('/student/courses')}>
+                  Browse Courses
+                </button>
+              </div>
+            ) : (
+              <div className="dashboard__courses">
+                {enrollments.map((enrollment, idx) => {
+                  const course = enrollment.course
+                  const color  = DEPT_COLORS[course.dept] || COLORS[idx % COLORS.length]
+                  const icon   = course.icon || ICONS[idx % ICONS.length]
+                  const enrolledDate = new Date(enrollment.enrollmentDate).toLocaleDateString('en-US', {
+                    month: 'short', day: 'numeric', year: 'numeric'
+                  })
 
-                  <p className="course-card__description">{course.description}</p>
-
-                  <div className="course-card__stats">
-                    <div className="course-card__stat">
-                      <span className="course-card__stat-label">Modules</span>
-                      <span className="course-card__stat-value">{course.completedModules}/{course.modules}</span>
-                    </div>
-                    <div className="course-card__stat">
-                      <span className="course-card__stat-label">Assignments</span>
-                      <span className="course-card__stat-value">{course.completedAssignments}/{course.assignments}</span>
-                    </div>
-                    <div className="course-card__stat">
-                      <span className="course-card__stat-label">Schedule</span>
-                      <span className="course-card__stat-value">{course.schedule}</span>
-                    </div>
-                  </div>
-
-                  {/* Progress Bar */}
-                  <div className="course-card__progress">
-                    <div className="course-card__progress-label">
-                      <span>Progress</span>
-                      <span>{course.progress}%</span>
-                    </div>
-                    <div className="course-card__progress-bar">
-                      <div
-                        className="course-card__progress-fill"
-                        style={{ width: `${course.progress}%`, background: course.color }}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="course-card__footer">
-                    <div className="course-card__next">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                        <line x1="16" y1="2" x2="16" y2="6" />
-                        <line x1="8" y1="2" x2="8" y2="6" />
-                        <line x1="3" y1="10" x2="21" y2="10" />
-                      </svg>
-                      Next: {course.nextClass}
-                    </div>
-                    <button className="course-card__button">
-                      View Details
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M5 12h14M12 5l7 7-7 7" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Overall Progress Chart */}
-          <div className="dashboard__section">
-            <div className="dashboard__section-header">
-              <h2 className="dashboard__section-title">Overall Progress</h2>
-              <p className="dashboard__section-subtitle">Your completion rate across all courses</p>
-            </div>
-
-            <div className="progress-chart">
-              {courses.map((course) => (
-                <div key={course.id} className="progress-chart__item">
-                  <div className="progress-chart__info">
-                    <span className="progress-chart__name">{course.name}</span>
-                    <span className="progress-chart__percentage">{course.progress}%</span>
-                  </div>
-                  <div className="progress-chart__bar">
+                  return (
                     <div
-                      className="progress-chart__fill"
-                      style={{ width: `${course.progress}%`, background: course.color }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
+                      key={enrollment.id}
+                      className="course-card"
+                      onClick={() => navigate(`/course/${course.id}`)}
+                    >
+                      <div className="course-card__header">
+                        <div className="course-card__icon" style={{ background: `${color}18`, color }}>
+                          {icon}
+                        </div>
+                        <div className="course-card__info">
+                          <h3 className="course-card__title">{course.title}</h3>
+                          <p className="course-card__instructor">
+                            {course.instructor?.name ?? 'Unknown Instructor'}
+                          </p>
+                        </div>
+                        {course.dept && (
+                          <span className="course-card__progress-badge" style={{ background: `${color}15`, color }}>
+                            {course.dept}
+                          </span>
+                        )}
+                      </div>
+
+                      {course.description && (
+                        <p className="course-card__description">{course.description}</p>
+                      )}
+
+                      {/* Schedule info */}
+                      {course.schedules?.length > 0 && (
+                        <div className="course-card__stats">
+                          <div className="course-card__stat">
+                            <span className="course-card__stat-label">Days</span>
+                            <span className="course-card__stat-value">
+                              {course.schedules.map(s => s.day.slice(0, 3)).join(' / ')}
+                            </span>
+                          </div>
+                          <div className="course-card__stat">
+                            <span className="course-card__stat-label">Time</span>
+                            <span className="course-card__stat-value">
+                              {course.schedules[0].startTime} – {course.schedules[0].endTime}
+                            </span>
+                          </div>
+                          <div className="course-card__stat">
+                            <span className="course-card__stat-label">Sessions</span>
+                            <span className="course-card__stat-value">{course.schedules.length}× / week</span>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="course-card__footer">
+                        <div className="course-card__next">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                          </svg>
+                          Enrolled {enrolledDate}
+                        </div>
+                        <button
+                          className="course-card__button"
+                          onClick={(e) => { e.stopPropagation(); navigate(`/course/${course.id}`) }}
+                        >
+                          View Details
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M5 12h14M12 5l7 7-7 7" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </div>
+
+          {/* ── Schedule Overview ── */}
+          {!loading && enrollments.length > 0 && (
+            <div className="dashboard__section">
+              <div className="dashboard__section-header">
+                <h2 className="dashboard__section-title">Weekly Schedule</h2>
+                <p className="dashboard__section-subtitle">All your class sessions at a glance</p>
+              </div>
+
+              <div className="progress-chart">
+                {enrollments.map((enrollment, idx) => {
+                  const course = enrollment.course
+                  const color  = DEPT_COLORS[course.dept] || COLORS[idx % COLORS.length]
+                  if (!course.schedules?.length) return null
+                  return (
+                    <div key={enrollment.id} className="progress-chart__item">
+                      <div className="progress-chart__info">
+                        <span className="progress-chart__name">{course.title}</span>
+                        <span className="progress-chart__percentage" style={{ color }}>
+                          {course.schedules.map(s => `${s.day.slice(0,3)} ${s.startTime}`).join(' · ')}
+                        </span>
+                      </div>
+                      <div className="progress-chart__bar">
+                        <div
+                          className="progress-chart__fill"
+                          style={{ width: '100%', background: color, opacity: 0.25 }}
+                        />
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
         </div>
       </main>
       <Footer />

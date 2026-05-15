@@ -3,6 +3,7 @@ import cors from "cors";
 import authRoutes from "./routes/authRoutes.js";
 import courseRoutes from "./routes/courseRoutes.js";
 import enrollmentRoutes from "./routes/enrollmentRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
 
 const app = express();
 
@@ -13,13 +14,9 @@ app.use(cors({
 
 app.use(express.json());
 
-// Auth — signup, login, google
-app.use("/api/auth", authRoutes);
-
-// Courses — CRUD for courses
-app.use("/api/courses", courseRoutes);
-
-// Enrollments — enroll, drop, view
+app.use("/api/auth",        authRoutes);
+app.use("/api/courses",     courseRoutes);
 app.use("/api/enrollments", enrollmentRoutes);
+app.use("/api/users",       userRoutes);
 
 export default app;
