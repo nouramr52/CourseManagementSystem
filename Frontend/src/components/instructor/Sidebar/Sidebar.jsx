@@ -3,11 +3,11 @@ import { useNavigate } from 'react-router-dom'
 import './Sidebar.css'
 
 const navItems = [
-  { id: 'overview',  label: 'Overview',         icon: '🏠' },
-  { id: 'courses',   label: 'My Courses',        icon: '📋' },
-  { id: 'students',  label: 'Students',          icon: '👥' },
-  { id: 'schedule',  label: 'Schedule',          icon: '📅' },
-  { id: 'materials', label: 'Upload Materials',  icon: '📁' },
+  { id: 'overview', label: 'Overview', icon: '🏠' },
+  { id: 'courses', label: 'My Courses', icon: '📋' },
+  { id: 'students', label: 'Students', icon: '👥' },
+  { id: 'schedule', label: 'Schedule', icon: '📅' },
+  { id: 'materials', label: 'Upload Materials', icon: '📁' },
 ]
 
 export default function Sidebar({ active, onNavigate }) {
@@ -23,7 +23,7 @@ export default function Sidebar({ active, onNavigate }) {
   return (
     <aside className={`sidebar ${collapsed ? 'sidebar--collapsed' : ''}`}>
       {/* Logo */}
-      <div className="sidebar__logo">
+      <div className="sidebar__logo" onClick={() => navigate('/')} style={{ cursor: 'pointer' }} title="Go to homepage">
         <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
           <rect width="28" height="28" rx="8" fill="#4f46e5" />
           <path d="M7 10l7-4 7 4v8l-7 4-7-4V10z" fill="white" fillOpacity=".9" />
