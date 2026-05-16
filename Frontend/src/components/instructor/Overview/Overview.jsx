@@ -1,75 +1,140 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { getMe, updateMe } from '../../../api/userApi'
+import { getMyCourses } from '../../../api/courseApi'
+import { getInstructorStats, getInstructorSchedule } from '../../../api/instructorApi'
+import { getCourseMaterials } from '../../../api/materialApi'
 import './Overview.css'
 
-const initialProfile = {
-  name: 'Dr. Sarah Lee',
-  title: 'Associate Professor',
-  department: 'Computer Science',
-  email: 'sarah.lee@university.edu',
-  phone: '+1 (555) 012-3456',
-  bio: 'Passionate educator with 10+ years of experience in software engineering and database systems. Focused on making complex topics accessible through practical, project-based learning.',
-  expertise: ['Database Systems', 'Software Engineering', 'Data Structures'],
-  joined: 'September 2015',
-}
-
-const summaryStats = [
-  { label: 'Total Courses',      value: '4',  icon: '📋', color: '#4f46e5', bg: '#eef2ff' },
-  { label: 'Total Students',     value: '87', icon: '👥', color: '#06b6d4', bg: '#ecfeff' },
-  { label: 'Uploaded Materials', value: '34', icon: '📁', color: '#10b981', bg: '#ecfdf5' },
-  { label: 'Schedule Conflicts', value: '1',  icon: '⚠️', color: '#ef4444', bg: '#fef2f2' },
-]
-
-const recentCourses = [
-  { title: 'Database Systems',     code: 'CS301', students: 28, capacity: 30, status: 'Active',   color: '#4f46e5' },
-  { title: 'Software Engineering', code: 'CS402', students: 25, capacity: 25, status: 'Full',     color: '#06b6d4' },
-  { title: 'Data Structures',      code: 'CS201', students: 34, capacity: 40, status: 'Active',   color: '#10b981' },
-  { title: 'Operating Systems',    code: 'CS303', students: 0,  capacity: 30, status: 'Upcoming', color: '#8b5cf6' },
-]
-
-const recentMaterials = [
-  { title: 'Introduction to SQL',           course: 'Database Systems',     type: 'PDF',  date: '2024-09-05' },
-  { title: 'UML Diagrams Lab Sheet',         course: 'Software Engineering', type: 'DOC',  date: '2024-09-12' },
-  { title: 'Arrays and Linked Lists',        course: 'Data Structures',      type: 'Link', date: '2024-09-07' },
-]
-
-const upcomingSessions = [
-  { course: 'Data Structures',      code: 'CS201', day: 'Monday',    time: '09:00 – 10:00', color: '#10b981', conflict: false },
-  { course: 'Database Systems',     code: 'CS301', day: 'Monday',    time: '10:00 – 11:30', color: '#4f46e5', conflict: false },
-  { course: 'Software Engineering', code: 'CS402', day: 'Tuesday',   time: '13:00 – 14:30', color: '#06b6d4', conflict: false },
-  { course: 'Operating Systems',    code: 'CS303', day: 'Thursday',  time: '13:00 – 15:00', color: '#8b5cf6', conflict: true  },
-  { course: 'Software Engineering', code: 'CS402', day: 'Thursday',  time: '13:00 – 14:30', color: '#06b6d4', conflict: true  },
-]
-
 const statusStyle = {
-  Active:   { bg: '#dcfce7', color: '#16a34a' },
-  Full:     { bg: '#fee2e2', color: '#dc2626' },
+  Active: { bg: '#dcfce7', color: '#16a34a' },
+  Full: { bg: '#fee2e2', color: '#dc2626' },
   Upcoming: { bg: '#fef9c3', color: '#ca8a04' },
 }
 
 const typeColors = {
-  PDF:  { bg: '#fee2e2', color: '#dc2626' },
-  PPT:  { bg: '#fef9c3', color: '#ca8a04' },
-  DOC:  { bg: '#dbeafe', color: '#2563eb' },
-  Link: { bg: '#ecfdf5', color: '#059669' },
+  PDF: { bg: '#fee2e2', color: '#dc2626' },
+  PPT: { bg: '#fef9c3', color: '#ca8a04' },
+  DOC: { bg: '#dbeafe', color: '#2563eb' },
+  ZIP: { bg: '#f3e8ff', color: '#7c3aed' },
+  LINK: { bg: '#ecfdf5', color: '#059669' },
 }
 
+const COURSE_COLORS = ['#4f46e5', '#06b6d4', '#10b981', '#8b5cf6', '#f59e0b', '#ec4899']
+const getCourseColor = (idx) => COURSE_COLORS[idx % COURSE_COLORS.length]
+
+const DAY_ORDER = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+
 export default function Overview({ onNavigate }) {
-  const [profile, setProfile]   = useState(initialProfile)
-  const [editing, setEditing]   = useState(false)
-  const [draft, setDraft]       = useState(initialProfile)
-  const [newTag, setNewTag]     = useState('')
+  // ── User / profile ──────────────────────────────────────────────────────
+  const [user, setUser] = useState(null)
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState({ name: '' })
+  const [saving, setSaving] = useState(false)
+  const [saveErr, setSaveErr] = useState('')
 
-  const saveProfile = () => { setProfile(draft); setEditing(false) }
-  const cancelEdit  = () => { setDraft(profile); setEditing(false) }
+  // ── Dashboard data ──────────────────────────────────────────────────────
+  const [stats, setStats] = useState(null)
+  const [courses, setCourses] = useState([])
+  const [schedule, setSchedule] = useState([])
+  const [materials, setMaterials] = useState([])
+  const [loading, setLoading] = useState(true)
 
-  const addTag = () => {
-    const t = newTag.trim()
-    if (t && !draft.expertise.includes(t)) setDraft({ ...draft, expertise: [...draft.expertise, t] })
-    setNewTag('')
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const [userRes, statsRes, coursesRes, scheduleRes] = await Promise.all([
+          getMe(),
+          getInstructorStats(),
+          getMyCourses(),
+          getInstructorSchedule(),
+        ])
+
+        setUser(userRes.data)
+        setDraft({ name: userRes.data.name })
+        setStats(statsRes.data)
+        setCourses(coursesRes.data)
+        setSchedule(scheduleRes.data)
+
+        // Load recent materials (up to 3) across all courses
+        if (coursesRes.data.length > 0) {
+          const results = await Promise.all(
+            coursesRes.data.map((c) =>
+              getCourseMaterials(c.id, localStorage.getItem('token')).then((r) => r.data)
+            )
+          )
+          const all = results.flat().sort(
+            (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+          )
+          setMaterials(all.slice(0, 3))
+        }
+      } catch {
+        // Non-fatal — partial data is fine
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
+  }, [])
+
+  // ── Profile save ────────────────────────────────────────────────────────
+  const saveProfile = async () => {
+    setSaving(true)
+    setSaveErr('')
+    try {
+      const res = await updateMe({ name: draft.name })
+      setUser(res.data)
+      localStorage.setItem('user', JSON.stringify(res.data))
+      setEditing(false)
+    } catch (err) {
+      setSaveErr(err.response?.data?.message || 'Failed to save')
+    } finally {
+      setSaving(false)
+    }
   }
-  const removeTag = (tag) => setDraft({ ...draft, expertise: draft.expertise.filter((e) => e !== tag) })
 
-  const conflictCount = upcomingSessions.filter((s) => s.conflict).length
+  const cancelEdit = () => {
+    setDraft({ name: user?.name || '' })
+    setSaveErr('')
+    setEditing(false)
+  }
+
+  // ── Derived data ────────────────────────────────────────────────────────
+  const summaryStats = stats
+    ? [
+      { label: 'Total Courses', value: stats.totalCourses, icon: '📋', color: '#4f46e5', bg: '#eef2ff' },
+      { label: 'Total Students', value: stats.totalStudents, icon: '👥', color: '#06b6d4', bg: '#ecfeff' },
+      { label: 'Uploaded Materials', value: stats.totalMaterials, icon: '📁', color: '#10b981', bg: '#ecfdf5' },
+      { label: 'Schedule Conflicts', value: stats.scheduleConflicts, icon: '⚠️', color: '#ef4444', bg: '#fef2f2' },
+    ]
+    : []
+
+  // Sort schedule by day order then time, take first 5
+  const upcomingSessions = [...schedule]
+    .sort((a, b) => {
+      const di = DAY_ORDER.indexOf(a.day) - DAY_ORDER.indexOf(b.day)
+      if (di !== 0) return di
+      return a.startTime.localeCompare(b.startTime)
+    })
+    .slice(0, 5)
+
+  const conflictCount = schedule.filter((s) => s.conflict).length
+
+  const getCourseStatus = (course) => {
+    const enrolled = course._count?.enrollments ?? 0
+    if (enrolled >= course.capacity) return 'Full'
+    return 'Active'
+  }
+
+  const getCourseMaterialTitle = (courseId) =>
+    courses.find((c) => c.id === courseId)?.title || '—'
+
+  if (loading) {
+    return (
+      <div className="overview">
+        <p style={{ padding: '3rem', textAlign: 'center', color: '#94a3b8' }}>Loading overview…</p>
+      </div>
+    )
+  }
 
   return (
     <div className="overview">
@@ -83,7 +148,7 @@ export default function Overview({ onNavigate }) {
           <div className="ov-profile__body">
             <div className="ov-profile__avatar-row">
               <div className="ov-profile__avatar">
-                {profile.name.split(' ').map((n) => n[0]).join('').slice(0, 2)}
+                {user?.name?.split(' ').map((n) => n[0]).join('').slice(0, 2) ?? '…'}
               </div>
               <button
                 className={`ov-profile__edit-btn ${editing ? 'ov-profile__edit-btn--cancel' : ''}`}
@@ -95,73 +160,30 @@ export default function Overview({ onNavigate }) {
 
             {editing ? (
               <div className="ov-profile__form">
-                <div className="ov-pf__row">
-                  <div className="ov-pf__field">
-                    <label>Full Name</label>
-                    <input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
-                  </div>
-                  <div className="ov-pf__field">
-                    <label>Title</label>
-                    <input value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} />
-                  </div>
-                </div>
-                <div className="ov-pf__row">
-                  <div className="ov-pf__field">
-                    <label>Department</label>
-                    <input value={draft.department} onChange={(e) => setDraft({ ...draft, department: e.target.value })} />
-                  </div>
-                  <div className="ov-pf__field">
-                    <label>Email</label>
-                    <input type="email" value={draft.email} onChange={(e) => setDraft({ ...draft, email: e.target.value })} />
-                  </div>
-                </div>
                 <div className="ov-pf__field">
-                  <label>Phone</label>
-                  <input value={draft.phone} onChange={(e) => setDraft({ ...draft, phone: e.target.value })} />
+                  <label>Full Name</label>
+                  <input
+                    value={draft.name}
+                    onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+                  />
                 </div>
-                <div className="ov-pf__field">
-                  <label>Bio</label>
-                  <textarea rows={3} value={draft.bio} onChange={(e) => setDraft({ ...draft, bio: e.target.value })} />
-                </div>
-                <div className="ov-pf__field">
-                  <label>Areas of Expertise</label>
-                  <div className="ov-pf__tags">
-                    {draft.expertise.map((tag) => (
-                      <span key={tag} className="ov-pf__tag">
-                        {tag}
-                        <button onClick={() => removeTag(tag)}>✕</button>
-                      </span>
-                    ))}
-                    <div className="ov-pf__tag-input">
-                      <input
-                        value={newTag}
-                        placeholder="Add expertise…"
-                        onChange={(e) => setNewTag(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
-                      />
-                      <button onClick={addTag}>+</button>
-                    </div>
-                  </div>
-                </div>
+                {saveErr && (
+                  <p style={{ color: '#dc2626', fontSize: '0.82rem' }}>{saveErr}</p>
+                )}
                 <div className="ov-pf__actions">
-                  <button className="ov-pf__save" onClick={saveProfile}>Save Changes</button>
+                  <button className="ov-pf__save" onClick={saveProfile} disabled={saving}>
+                    {saving ? 'Saving…' : 'Save Changes'}
+                  </button>
                   <button className="ov-pf__cancel" onClick={cancelEdit}>Cancel</button>
                 </div>
               </div>
             ) : (
               <div className="ov-profile__info">
-                <h2 className="ov-profile__name">{profile.name}</h2>
-                <p className="ov-profile__title">{profile.title} · {profile.department}</p>
-                <p className="ov-profile__bio">{profile.bio}</p>
+                <h2 className="ov-profile__name">{user?.name ?? '—'}</h2>
+                <p className="ov-profile__title">Instructor</p>
                 <div className="ov-profile__meta">
-                  <span>✉️ {profile.email}</span>
-                  <span>📞 {profile.phone}</span>
-                  <span>📅 Joined {profile.joined}</span>
-                </div>
-                <div className="ov-profile__tags">
-                  {profile.expertise.map((tag) => (
-                    <span key={tag} className="ov-profile__tag">{tag}</span>
-                  ))}
+                  <span>✉️ {user?.email}</span>
+                  <span>📅 Joined {user ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : '—'}</span>
                 </div>
               </div>
             )}
@@ -192,23 +214,27 @@ export default function Overview({ onNavigate }) {
             <button className="ov-card__link" onClick={() => onNavigate('courses')}>View all →</button>
           </div>
           <div className="ov-courses">
-            {recentCourses.map((c) => {
-              const st  = statusStyle[c.status]
-              const pct = Math.round((c.students / c.capacity) * 100)
+            {courses.length === 0 ? (
+              <p style={{ color: '#94a3b8', fontSize: '0.85rem', padding: '0.5rem 0' }}>No courses yet.</p>
+            ) : courses.slice(0, 4).map((c, idx) => {
+              const enrolled = c._count?.enrollments ?? 0
+              const pct = Math.round((enrolled / c.capacity) * 100)
+              const status = getCourseStatus(c)
+              const st = statusStyle[status] || statusStyle.Active
+              const color = getCourseColor(idx)
               return (
-                <div key={c.code} className="ov-course-row">
-                  <span className="ov-course-bar" style={{ background: c.color }} />
+                <div key={c.id} className="ov-course-row">
+                  <span className="ov-course-bar" style={{ background: color }} />
                   <div className="ov-course-info">
                     <div className="ov-course-top">
                       <span className="ov-course-name">{c.title}</span>
-                      <span className="ov-course-status" style={{ background: st.bg, color: st.color }}>{c.status}</span>
+                      <span className="ov-course-status" style={{ background: st.bg, color: st.color }}>{status}</span>
                     </div>
                     <div className="ov-course-bottom">
-                      <span className="ov-course-code" style={{ color: c.color }}>{c.code}</span>
-                      <span className="ov-course-students">👥 {c.students}/{c.capacity}</span>
+                      <span className="ov-course-students">👥 {enrolled}/{c.capacity}</span>
                     </div>
                     <div className="ov-course-progress-bar">
-                      <div style={{ width: `${pct}%`, background: c.color }} />
+                      <div style={{ width: `${pct}%`, background: color }} />
                     </div>
                   </div>
                 </div>
@@ -229,23 +255,27 @@ export default function Overview({ onNavigate }) {
             <button className="ov-card__link" onClick={() => onNavigate('schedule')}>View all →</button>
           </div>
           <div className="ov-schedule">
-            {upcomingSessions.map((s, i) => (
-              <div key={i} className={`ov-session ${s.conflict ? 'ov-session--conflict' : ''}`}>
-                <div className="ov-session__left">
-                  <span className="ov-session__bar" style={{ background: s.conflict ? '#ef4444' : s.color }} />
-                  <div>
-                    <p className="ov-session__course">{s.course}</p>
-                    <p className="ov-session__time">{s.day} · {s.time}</p>
+            {upcomingSessions.length === 0 ? (
+              <p style={{ color: '#94a3b8', fontSize: '0.85rem', padding: '0.5rem 0' }}>No schedule slots yet.</p>
+            ) : upcomingSessions.map((s) => {
+              const { color } = COURSE_COLORS
+                ? { color: getCourseColor(s.courseId) }
+                : { color: '#4f46e5' }
+              return (
+                <div key={s.id} className={`ov-session ${s.conflict ? 'ov-session--conflict' : ''}`}>
+                  <div className="ov-session__left">
+                    <span className="ov-session__bar" style={{ background: s.conflict ? '#ef4444' : color }} />
+                    <div>
+                      <p className="ov-session__course">{s.course?.title}</p>
+                      <p className="ov-session__time">{s.day} · {s.startTime} – {s.endTime}</p>
+                    </div>
+                  </div>
+                  <div className="ov-session__right">
+                    {s.conflict && <span className="ov-session__conflict-tag">Conflict</span>}
                   </div>
                 </div>
-                <div className="ov-session__right">
-                  <span className="ov-session__code" style={{ color: s.conflict ? '#ef4444' : s.color, background: s.conflict ? '#fef2f2' : '#f1f5f9' }}>
-                    {s.code}
-                  </span>
-                  {s.conflict && <span className="ov-session__conflict-tag">Conflict</span>}
-                </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
 
@@ -256,14 +286,18 @@ export default function Overview({ onNavigate }) {
             <button className="ov-card__link" onClick={() => onNavigate('materials')}>View all →</button>
           </div>
           <div className="ov-materials">
-            {recentMaterials.map((m) => {
+            {materials.length === 0 ? (
+              <p style={{ color: '#94a3b8', fontSize: '0.85rem', padding: '0.5rem 0' }}>No materials uploaded yet.</p>
+            ) : materials.map((m) => {
               const t = typeColors[m.type] || typeColors.PDF
               return (
                 <div key={m.id} className="ov-material-row">
                   <span className="ov-material-type" style={{ background: t.bg, color: t.color }}>{m.type}</span>
                   <div className="ov-material-info">
                     <p className="ov-material-title">{m.title}</p>
-                    <p className="ov-material-course">{m.course} · {m.date}</p>
+                    <p className="ov-material-course">
+                      {getCourseMaterialTitle(m.courseId)} · {new Date(m.createdAt).toLocaleDateString()}
+                    </p>
                   </div>
                 </div>
               )

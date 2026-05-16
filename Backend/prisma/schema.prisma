@@ -47,6 +47,9 @@ model User {
 
   // A user with role STUDENT can have many enrollments
   enrollments    Enrollment[]
+
+  // Materials uploaded by this user (instructor)
+  uploadedMaterials Material[] @relation("UploadedMaterials")
 }
 
 // =====================
@@ -95,13 +98,19 @@ model Enrollment {
 // =====================
 
 model Material {
-  id        Int      @id @default(autoincrement())
-  title     String
-  filePath  String?
-  createdAt DateTime @default(now())
+  id          Int      @id @default(autoincrement())
+  title       String
+  type        String   // PDF | PPT | DOC | ZIP | LINK
+  url         String   // public URL (Supabase) or link URL
+  storagePath String?  // Supabase storage path (null for LINK type)
+  filePath    String?  // legacy — kept for backwards compat
+  createdAt   DateTime @default(now())
 
-  courseId Int
-  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  courseId     Int
+  course       Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  uploadedById Int
+  uploadedBy   User   @relation("UploadedMaterials", fields: [uploadedById], references: [id])
 }
 
 // =====================

@@ -1,24 +1,37 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { getInstructorStudents } from '../../../api/instructorApi'
+import { getMyCourses } from '../../../api/courseApi'
 import './StudentsTable.css'
 
-const allStudents = [
-  { id: 1, name: 'Alex Johnson',   email: 'alex.j@university.edu',    course: 'Database Systems',     enrolled: '2024-09-01', status: 'Active' },
-  { id: 2, name: 'Maria Garcia',   email: 'maria.g@university.edu',   course: 'Database Systems',     enrolled: '2024-09-01', status: 'Active' },
-  { id: 3, name: 'James Wilson',   email: 'james.w@university.edu',   course: 'Software Engineering', enrolled: '2024-09-02', status: 'Active' },
-  { id: 4, name: 'Fatima Al-Said', email: 'fatima.s@university.edu',  course: 'Software Engineering', enrolled: '2024-09-02', status: 'Active' },
-  { id: 5, name: 'Chen Wei',       email: 'chen.w@university.edu',    course: 'Data Structures',      enrolled: '2024-09-03', status: 'Active' },
-  { id: 6, name: 'Sara Ahmed',     email: 'sara.a@university.edu',    course: 'Data Structures',      enrolled: '2024-09-03', status: 'Active' },
-  { id: 7, name: 'Omar Hassan',    email: 'omar.h@university.edu',    course: 'Database Systems',     enrolled: '2024-09-01', status: 'Active' },
-  { id: 8, name: 'Lena Müller',    email: 'lena.m@university.edu',    course: 'Software Engineering', enrolled: '2024-09-02', status: 'Active' },
-]
-
-const courses = ['All Courses', 'Database Systems', 'Software Engineering', 'Data Structures']
-
 export default function StudentsTable() {
+  const [students, setStudents] = useState([])
+  const [courses, setCourses] = useState([])
   const [filter, setFilter] = useState('All Courses')
   const [search, setSearch] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
-  const filtered = allStudents.filter((s) => {
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const [studentsRes, coursesRes] = await Promise.all([
+          getInstructorStudents(),
+          getMyCourses(),
+        ])
+        setStudents(studentsRes.data)
+        setCourses(coursesRes.data)
+      } catch {
+        setError('Failed to load students')
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
+  }, [])
+
+  const courseTitles = ['All Courses', ...courses.map((c) => c.title)]
+
+  const filtered = students.filter((s) => {
     const matchCourse = filter === 'All Courses' || s.course === filter
     const matchSearch =
       s.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -37,6 +50,8 @@ export default function StudentsTable() {
         <span className="students-table__count">{filtered.length} students</span>
       </div>
 
+      {error && <p style={{ color: '#dc2626', fontSize: '0.85rem', marginBottom: '0.75rem' }}>{error}</p>}
+
       {/* Filters */}
       <div className="students-table__filters">
         <input
@@ -46,7 +61,7 @@ export default function StudentsTable() {
           onChange={(e) => setSearch(e.target.value)}
         />
         <div className="students-table__tabs">
-          {courses.map((c) => (
+          {courseTitles.map((c) => (
             <button
               key={c}
               className={`students-table__tab ${filter === c ? 'students-table__tab--active' : ''}`}
@@ -60,47 +75,53 @@ export default function StudentsTable() {
 
       {/* Table */}
       <div className="students-table__wrap">
-        <table className="students-table__table">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Student Name</th>
-              <th>Email</th>
-              <th>Course</th>
-              <th>Enrollment Date</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.length === 0 ? (
+        {loading ? (
+          <p style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8' }}>Loading students…</p>
+        ) : (
+          <table className="students-table__table">
+            <thead>
               <tr>
-                <td colSpan="6" className="students-table__empty">No students found.</td>
+                <th>#</th>
+                <th>Student Name</th>
+                <th>Email</th>
+                <th>Course</th>
+                <th>Enrollment Date</th>
+                <th>Status</th>
               </tr>
-            ) : (
-              filtered.map((s, i) => (
-                <tr key={s.id}>
-                  <td className="students-table__num">{i + 1}</td>
-                  <td>
-                    <div className="students-table__name-cell">
-                      <div className="students-table__avatar">
-                        {s.name.split(' ').map((n) => n[0]).join('').slice(0, 2)}
-                      </div>
-                      <span>{s.name}</span>
-                    </div>
-                  </td>
-                  <td className="students-table__email">{s.email}</td>
-                  <td>
-                    <span className="students-table__course">{s.course}</span>
-                  </td>
-                  <td className="students-table__date">{s.enrolled}</td>
-                  <td>
-                    <span className="students-table__status">{s.status}</span>
-                  </td>
+            </thead>
+            <tbody>
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan="6" className="students-table__empty">No students found.</td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                filtered.map((s, i) => (
+                  <tr key={s.id}>
+                    <td className="students-table__num">{i + 1}</td>
+                    <td>
+                      <div className="students-table__name-cell">
+                        <div className="students-table__avatar">
+                          {s.name.split(' ').map((n) => n[0]).join('').slice(0, 2)}
+                        </div>
+                        <span>{s.name}</span>
+                      </div>
+                    </td>
+                    <td className="students-table__email">{s.email}</td>
+                    <td>
+                      <span className="students-table__course">{s.course}</span>
+                    </td>
+                    <td className="students-table__date">
+                      {new Date(s.enrolled).toLocaleDateString()}
+                    </td>
+                    <td>
+                      <span className="students-table__status">{s.status}</span>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   )

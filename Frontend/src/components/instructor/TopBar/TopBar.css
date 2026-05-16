@@ -114,3 +114,138 @@
   font-size: 0.72rem;
   color: var(--text-muted);
 }
+
+/* ── Notification dropdown ─────────────────────────────────────────────── */
+
+.topbar__notif-wrap {
+  position: relative;
+}
+
+.topbar__icon-btn--active {
+  background: #eef2ff;
+  border-color: #c7d2fe;
+}
+
+.notif-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 340px;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  z-index: 1000;
+  overflow: hidden;
+  animation: notif-fade-in 0.15s ease;
+}
+
+@keyframes notif-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.notif-dropdown__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.9rem 1.1rem 0.7rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.notif-dropdown__title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.notif-dropdown__count {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  background: #f1f5f9;
+  padding: 0.15rem 0.5rem;
+  border-radius: 20px;
+}
+
+.notif-dropdown__list {
+  max-height: 340px;
+  overflow-y: auto;
+}
+
+.notif-dropdown__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 2rem 1rem;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.notif-dropdown__empty span {
+  font-size: 1.6rem;
+}
+
+/* Individual notification row */
+.notif-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem 1.1rem;
+  border-bottom: 1px solid #f1f5f9;
+  transition: background 0.15s;
+}
+
+.notif-item:last-child {
+  border-bottom: none;
+}
+
+.notif-item:hover {
+  background: #f8fafc;
+}
+
+.notif-item__icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.notif-item--enroll .notif-item__icon {
+  background: #ecfdf5;
+}
+
+.notif-item--drop .notif-item__icon {
+  background: #fef2f2;
+}
+
+.notif-item__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.notif-item__message {
+  font-size: 0.82rem;
+  color: var(--text);
+  line-height: 1.4;
+  margin: 0;
+}
+
+.notif-item__time {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}

@@ -18,6 +18,25 @@ router.get("/me", authMiddleware, async (req, res) => {
     }
 });
 
+// PATCH /api/users/me — update the logged-in user's name
+// Only name is updatable here (email changes require verification, role changes are admin-only)
+router.patch("/me", authMiddleware, async (req, res) => {
+    try {
+        const { name } = req.body;
+        if (!name || name.trim() === "") {
+            return res.status(400).json({ message: "Name is required" });
+        }
+        const user = await prisma.user.update({
+            where: { id: req.user.id },
+            data: { name: name.trim() },
+            select: { id: true, name: true, email: true, role: true, createdAt: true },
+        });
+        res.json(user);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
 // Legacy dashboard route
 router.get("/dashboard", authMiddleware, (req, res) => {
     res.json({ message: "Dashboard accessed", user: req.user });
