@@ -24,19 +24,19 @@ const DEPT_COLORS = [
 ]
 
 const DEPT_PALETTE = {
-  'Computer Science':        0,
-  'Software Engineering':    1,
-  'Information Systems':     2,
-  'Data Science':            3,
+  'Computer Science': 0,
+  'Software Engineering': 1,
+  'Information Systems': 2,
+  'Data Science': 3,
   'Artificial Intelligence': 4,
-  'Cybersecurity':           5,
-  'Networking':              1,
-  'Mathematics':             2,
-  'Physics':                 3,
-  'General':                 0,
+  'Cybersecurity': 5,
+  'Networking': 1,
+  'Mathematics': 2,
+  'Physics': 3,
+  'General': 0,
 }
 
-const DEFAULT_ICONS = ['🗄️','⚙️','🌐','💻','🔐','📊','🤖','📚','🧮','📡']
+const DEFAULT_ICONS = ['🗄️', '⚙️', '🌐', '💻', '🔐', '📊', '🤖', '📚', '🧮', '📡']
 
 export const getPalette = (course, idx) => {
   if (course.dept && DEPT_PALETTE[course.dept] !== undefined) {
@@ -48,18 +48,18 @@ export const getPalette = (course, idx) => {
 export default function CourseCard({
   course,
   idx = 0,
-  isEnrolled  = false,
+  isEnrolled = false,
   isEnrolling = false,
-  onEnroll    = null,
-  onDrop      = null,
-  isGuest     = false,
+  onEnroll = null,
+  onDrop = null,
+  isGuest = false,
 }) {
   const navigate = useNavigate()
 
-  const palette   = getPalette(course, idx)
-  const icon      = course.icon || DEFAULT_ICONS[idx % DEFAULT_ICONS.length]
-  const enrolled  = course._count?.enrollments ?? 0
-  const isFull    = enrolled >= course.capacity
+  const palette = getPalette(course, idx)
+  const icon = course.icon || DEFAULT_ICONS[idx % DEFAULT_ICONS.length]
+  const enrolled = course._count?.enrollments ?? 0
+  const isFull = enrolled >= course.capacity
   const seatsLeft = course.capacity - enrolled
   const seatColor = isFull ? '#ef4444' : seatsLeft <= 5 ? '#f59e0b' : '#10b981'
 
@@ -78,7 +78,7 @@ export default function CourseCard({
           className="course-card__status"
           style={{
             background: isEnrolled ? '#eef2ff' : isFull ? '#fee2e2' : '#dcfce7',
-            color:      isEnrolled ? '#4f46e5' : isFull ? '#dc2626' : '#16a34a',
+            color: isEnrolled ? '#4f46e5' : isFull ? '#dc2626' : '#16a34a',
           }}
         >
           {isEnrolled ? '✓ Enrolled' : isFull ? 'Full' : 'Open'}
@@ -109,16 +109,16 @@ export default function CourseCard({
           <div className="course-card__schedule">
             <div className="course-card__schedule-row">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                <line x1="16" y1="2" x2="16" y2="6"/>
-                <line x1="8"  y1="2" x2="8"  y2="6"/>
-                <line x1="3"  y1="10" x2="21" y2="10"/>
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                <line x1="16" y1="2" x2="16" y2="6" />
+                <line x1="8" y1="2" x2="8" y2="6" />
+                <line x1="3" y1="10" x2="21" y2="10" />
               </svg>
               {course.schedules.map(s => s.day).join(' / ')}
             </div>
             <div className="course-card__schedule-row">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
               </svg>
               {course.schedules[0].startTime} – {course.schedules[course.schedules.length - 1].endTime}
             </div>
@@ -146,7 +146,7 @@ export default function CourseCard({
           /* Guest — View Details only */
           <button
             className="course-card__btn cc-btn--primary"
-            style={{ background: palette.color }}
+            style={{ background: '#4f46e5' }}
             onClick={() => navigate(`/course/${course.id}`)}
           >
             View Details
@@ -177,7 +177,8 @@ export default function CourseCard({
               Course Full
             </button>
             <button
-              className="course-card__btn cc-btn--outline"
+              className="course-card__btn cc-btn--primary"
+              style={{ background: '#4f46e5' }}
               onClick={() => navigate(`/course/${course.id}`)}
             >
               View Details
@@ -196,7 +197,8 @@ export default function CourseCard({
               {isEnrolling ? '⏳ Enrolling…' : 'Enroll Now'}
             </button>
             <button
-              className="course-card__btn cc-btn--outline"
+              className="course-card__btn cc-btn--primary"
+              style={{ background: '#4f46e5' }}
               onClick={() => navigate(`/course/${course.id}`)}
             >
               View Details
