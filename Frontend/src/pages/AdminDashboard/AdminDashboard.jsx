@@ -5,7 +5,6 @@ import AdminOverview from '../../components/admin/Overview/AdminOverview'
 import AdminUsersTable from '../../components/admin/UsersTable/AdminUsersTable'
 import AdminCoursesTable from '../../components/admin/CoursesTable/AdminCoursesTable'
 import AdminAnalytics from '../../components/admin/Analytics/AdminAnalytics'
-import AdminSettings from '../../components/admin/Settings/AdminSettings'
 import './AdminDashboard.css'
 
 export default function AdminDashboard() {
@@ -23,7 +22,6 @@ export default function AdminDashboard() {
           {activePage === 'users'     && <AdminUsersTable />}
           {activePage === 'courses'   && <AdminCoursesTable />}
           {activePage === 'analytics' && <AdminAnalytics />}
-          {activePage === 'settings'  && <AdminSettings />}
         </div>
       </div>
     </div>

@@ -7,7 +7,6 @@ const navItems = [
   { id: 'users',       label: 'Users',          icon: '👥' },
   { id: 'courses',     label: 'Courses',        icon: '📋' },
   { id: 'analytics',   label: 'Analytics',      icon: '📊' },
-  { id: 'settings',    label: 'Settings',       icon: '⚙️' },
 ]
 
 export default function AdminSidebar({ active, onNavigate }) {

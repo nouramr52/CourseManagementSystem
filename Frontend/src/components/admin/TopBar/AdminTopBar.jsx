@@ -5,7 +5,6 @@ const pageTitles = {
   users:     'Users',
   courses:   'Courses',
   analytics: 'Analytics',
-  settings:  'Settings',
 }
 
 export default function AdminTopBar({ activePage }) {

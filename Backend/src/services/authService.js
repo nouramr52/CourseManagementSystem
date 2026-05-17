@@ -78,10 +78,8 @@ export const registerUser = async (data) => {
         await sendOTPEmail(email, otp, name);
     } catch (emailError) {
         console.error("Failed to send OTP email:", emailError);
-        // Continue — registration succeeds even if email fails
     }
 
-    // Observer: notify listeners a new user registered
     appEvents.emit(EVENTS.USER_REGISTERED, {
         userId: newUser.id,
         email:  newUser.email,
@@ -89,7 +87,7 @@ export const registerUser = async (data) => {
     });
 
     return {
-        ...createAuthResponse(newUser),   // Factory — builds token + user object
+        ...createAuthResponse(newUser),
         message: "Registration successful! Please check your email for OTP verification.",
     };
 };
@@ -107,7 +105,7 @@ export const loginUser = async ({ email, password }) => {
     const passwordMatch = await bcrypt.compare(password, user.password);
     if (!passwordMatch) throw new Error("Invalid email or password");
 
-    return createAuthResponse(user);   // Factory
+    return createAuthResponse(user);
 };
 
 // ─── GOOGLE AUTH ───────────────────────────────────────────────────────────
@@ -132,7 +130,7 @@ export const googleAuthUser = async (accessToken) => {
         });
     }
 
-    return { ...createAuthResponse(user), isNewUser };   // Factory
+    return { ...createAuthResponse(user), isNewUser };
 };
 
 // ─── COMPLETE PROFILE ──────────────────────────────────────────────────────
@@ -146,5 +144,5 @@ export const completeUserProfile = async (userId, role) => {
     }
 
     const user = await updateUserRole(userId, normalizedRole);
-    return createAuthResponse(user);   // Factory
+    return createAuthResponse(user);
 };
