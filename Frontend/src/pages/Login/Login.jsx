@@ -12,6 +12,7 @@ export default function Login() {
   })
   const [errors, setErrors] = useState({})
   const [showPassword, setShowPassword] = useState(false)
+  const [rememberMe, setRememberMe] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [apiError, setApiError] = useState('')
   const [loginAsStudent, setLoginAsStudent] = useState(false)
@@ -20,6 +21,14 @@ export default function Login() {
   useEffect(() => {
     if (location.state?.role === 'student') {
       setLoginAsStudent(true)
+    }
+    
+    // Load saved credentials if remember me was checked
+    const savedEmail = localStorage.getItem('rememberedEmail')
+    const savedPassword = localStorage.getItem('rememberedPassword')
+    if (savedEmail && savedPassword) {
+      setFormData({ email: savedEmail, password: savedPassword })
+      setRememberMe(true)
     }
   }, [location])
 
@@ -55,6 +64,15 @@ export default function Login() {
     try {
       const res = await loginUser({ email: formData.email, password: formData.password })
       const { user, token } = res.data
+
+      // Handle Remember Me
+      if (rememberMe) {
+        localStorage.setItem('rememberedEmail', formData.email)
+        localStorage.setItem('rememberedPassword', formData.password)
+      } else {
+        localStorage.removeItem('rememberedEmail')
+        localStorage.removeItem('rememberedPassword')
+      }
 
       localStorage.setItem('token', token)
       localStorage.setItem('user', JSON.stringify(user))
@@ -232,7 +250,11 @@ export default function Login() {
 
               <div className="auth-page__form-footer">
                 <label className="auth-page__checkbox">
-                  <input type="checkbox" />
+                  <input 
+                    type="checkbox" 
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                  />
                   <span>Remember me</span>
                 </label>
                 <Link to="/forgot-password" className="auth-page__link">

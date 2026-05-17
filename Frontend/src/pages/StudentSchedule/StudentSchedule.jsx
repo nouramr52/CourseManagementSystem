@@ -4,116 +4,39 @@ import Navbar from '../../components/shared/Navbar/Navbar'
 import Footer from '../../components/shared/Footer/Footer'
 import './StudentSchedule.css'
 
-// Full course catalog with schedule data
-const ALL_COURSES = [
-  {
-    id: 101,
-    name: 'Database Systems',
-    instructor: 'Dr. Sarah Johnson',
-    color: '#4f46e5',
-    deptBg: '#eef2ff',
-    icon: '🗄️',
-    days: ['Mon', 'Wed'],
-    startTime: '10:00',
-    endTime: '11:30',
-    room: 'CS-201',
-    credits: 3,
-  },
-  {
-    id: 102,
-    name: 'Software Engineering',
-    instructor: 'Prof. Michael Chen',
-    color: '#06b6d4',
-    deptBg: '#ecfeff',
-    icon: '⚙️',
-    days: ['Tue', 'Thu'],
-    startTime: '13:00',
-    endTime: '14:30',
-    room: 'CS-305',
-    credits: 3,
-  },
-  {
-    id: 103,
-    name: 'Operating Systems',
-    instructor: 'Dr. Emily Rodriguez',
-    color: '#10b981',
-    deptBg: '#ecfdf5',
-    icon: '💻',
-    days: ['Mon', 'Fri'],
-    startTime: '15:00',
-    endTime: '16:30',
-    room: 'CS-102',
-    credits: 3,
-  },
-  {
-    id: 104,
-    name: 'Web Development',
-    instructor: 'Prof. David Kim',
-    color: '#8b5cf6',
-    deptBg: '#f5f3ff',
-    icon: '🌐',
-    days: ['Wed', 'Fri'],
-    startTime: '11:00',
-    endTime: '12:30',
-    room: 'IS-401',
-    credits: 3,
-  },
-  {
-    id: 105,
-    name: 'Data Structures & Algorithms',
-    instructor: 'Dr. James Carter',
-    color: '#f59e0b',
-    deptBg: '#fffbeb',
-    icon: '🧮',
-    days: ['Mon', 'Wed', 'Fri'],
-    startTime: '09:00',
-    endTime: '10:00',
-    room: 'CS-110',
-    credits: 4,
-  },
-  {
-    id: 106,
-    name: 'Machine Learning',
-    instructor: 'Prof. Aisha Patel',
-    color: '#ef4444',
-    deptBg: '#fef2f2',
-    icon: '🤖',
-    days: ['Tue', 'Thu'],
-    startTime: '10:00',
-    endTime: '11:30',
-    room: 'DS-201',
-    credits: 4,
-  },
-  {
-    id: 107,
-    name: 'Computer Networks',
-    instructor: 'Dr. Lisa Wang',
-    color: '#06b6d4',
-    deptBg: '#ecfeff',
-    icon: '🔗',
-    days: ['Mon', 'Wed'],
-    startTime: '14:00',
-    endTime: '15:30',
-    room: 'CS-220',
-    credits: 3,
-  },
-  {
-    id: 108,
-    name: 'Cybersecurity Fundamentals',
-    instructor: 'Prof. Robert Hayes',
-    color: '#10b981',
-    deptBg: '#ecfdf5',
-    icon: '🔒',
-    days: ['Tue', 'Thu'],
-    startTime: '15:00',
-    endTime: '16:30',
-    room: 'IS-310',
-    credits: 3,
-  },
+const API_URL = 'http://localhost:5000/api'
+
+// Color palette for courses
+const COURSE_COLORS = [
+  { color: '#4f46e5', bg: '#eef2ff' },
+  { color: '#06b6d4', bg: '#ecfeff' },
+  { color: '#10b981', bg: '#ecfdf5' },
+  { color: '#8b5cf6', bg: '#f5f3ff' },
+  { color: '#f59e0b', bg: '#fffbeb' },
+  { color: '#ef4444', bg: '#fef2f2' },
+  { color: '#ec4899', bg: '#fdf2f8' },
+  { color: '#14b8a6', bg: '#f0fdfa' },
 ]
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']
-const DAY_LABELS = { Mon: 'Monday', Tue: 'Tuesday', Wed: 'Wednesday', Thu: 'Thursday', Fri: 'Friday' }
+const DAY_LABELS = { 
+  Mon: 'Monday', 
+  Tue: 'Tuesday', 
+  Wed: 'Wednesday', 
+  Thu: 'Thursday', 
+  Fri: 'Friday' 
+}
+
+// Map backend day names to short names
+const DAY_MAP = {
+  'Monday': 'Mon',
+  'Tuesday': 'Tue',
+  'Wednesday': 'Wed',
+  'Thursday': 'Thu',
+  'Friday': 'Fri',
+  'Saturday': 'Sat',
+  'Sunday': 'Sun'
+}
 
 // Time slots from 8:00 to 18:00
 const TIME_SLOTS = []
@@ -140,23 +63,94 @@ const ROW_HEIGHT = 40 // px per 30 min
 
 export default function StudentSchedule() {
   const navigate = useNavigate()
-  const [enrolledIds, setEnrolledIds] = useState([])
+  const [schedules, setSchedules] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [selectedCourse, setSelectedCourse] = useState(null)
   const [view, setView] = useState('week') // 'week' | 'list'
 
   useEffect(() => {
     const token = localStorage.getItem('token')
-    if (!token) { navigate('/login'); return }
-    const stored = localStorage.getItem('enrolledCourses')
-    if (stored) setEnrolledIds(JSON.parse(stored))
+    if (!token) { 
+      navigate('/login')
+      return 
+    }
+    fetchSchedule(token)
   }, [navigate])
 
-  const enrolledCourses = ALL_COURSES.filter(c => enrolledIds.includes(c.id))
+  const fetchSchedule = async (token) => {
+    try {
+      setLoading(true)
+      setError(null)
+      
+      console.log('Fetching schedule from:', `${API_URL}/schedules/my`)
+      
+      const response = await fetch(`${API_URL}/schedules/my`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
 
-  // Build schedule: for each day, list of courses
+      console.log('Response status:', response.status)
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        console.error('Error response:', errorData)
+        throw new Error(errorData.message || `Failed to fetch schedule (${response.status})`)
+      }
+
+      const data = await response.json()
+      console.log('Schedule data received:', data)
+      
+      // Transform backend data to frontend format
+      const transformedSchedules = data.map((schedule, index) => ({
+        id: schedule.id,
+        courseId: schedule.courseId,
+        name: schedule.course.title,
+        instructor: schedule.course.instructor?.name || 'Unknown',
+        color: COURSE_COLORS[index % COURSE_COLORS.length].color,
+        deptBg: COURSE_COLORS[index % COURSE_COLORS.length].bg,
+        icon: schedule.course.icon || '📚',
+        day: DAY_MAP[schedule.day] || schedule.day,
+        fullDay: schedule.day,
+        startTime: schedule.startTime,
+        endTime: schedule.endTime,
+        room: schedule.room || 'TBA',
+        credits: 3, // Default, could be added to backend
+      }))
+
+      console.log('Transformed schedules:', transformedSchedules)
+      setSchedules(transformedSchedules)
+    } catch (err) {
+      console.error('Error fetching schedule:', err)
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Group schedules by course
+  const courseMap = {}
+  schedules.forEach(schedule => {
+    if (!courseMap[schedule.courseId]) {
+      courseMap[schedule.courseId] = {
+        ...schedule,
+        days: [schedule.day]
+      }
+    } else {
+      if (!courseMap[schedule.courseId].days.includes(schedule.day)) {
+        courseMap[schedule.courseId].days.push(schedule.day)
+      }
+    }
+  })
+
+  const enrolledCourses = Object.values(courseMap)
+
+  // Build schedule: for each day, list of schedules
   const scheduleByDay = {}
   DAYS.forEach(day => {
-    scheduleByDay[day] = enrolledCourses.filter(c => c.days.includes(day))
+    scheduleByDay[day] = schedules.filter(s => s.day === day)
   })
 
   // Upcoming classes (next 7 days from today)
@@ -167,14 +161,52 @@ export default function StudentSchedule() {
     const d = new Date(today)
     d.setDate(today.getDate() + i)
     const dayKey = dayMap[d.getDay()]
-    const classes = enrolledCourses.filter(c => c.days.includes(dayKey))
+    const classes = schedules.filter(s => s.day === dayKey)
     if (classes.length > 0) {
       upcoming.push({ date: d, dayKey, classes })
     }
   }
 
   const totalCredits = enrolledCourses.reduce((s, c) => s + c.credits, 0)
-  const totalClassesPerWeek = enrolledCourses.reduce((s, c) => s + c.days.length, 0)
+  const totalClassesPerWeek = schedules.length
+
+  if (loading) {
+    return (
+      <>
+        <Navbar />
+        <main className="ss-page">
+          <div className="ss-container">
+            <div className="ss-empty">
+              <div className="ss-empty__icon">⏳</div>
+              <h3 className="ss-empty__title">Loading schedule...</h3>
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </>
+    )
+  }
+
+  if (error) {
+    return (
+      <>
+        <Navbar />
+        <main className="ss-page">
+          <div className="ss-container">
+            <div className="ss-empty">
+              <div className="ss-empty__icon">⚠️</div>
+              <h3 className="ss-empty__title">Error loading schedule</h3>
+              <p className="ss-empty__text">{error}</p>
+              <button className="ss-empty__btn" onClick={() => window.location.reload()}>
+                Try Again
+              </button>
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </>
+    )
+  }
 
   return (
     <>
@@ -254,7 +286,7 @@ export default function StudentSchedule() {
           )}
 
           {/* Empty state */}
-          {enrolledCourses.length === 0 ? (
+          {schedules.length === 0 ? (
             <div className="ss-empty">
               <div className="ss-empty__icon">🗓️</div>
               <h3 className="ss-empty__title">No classes scheduled</h3>
@@ -296,32 +328,32 @@ export default function StudentSchedule() {
                       ))}
 
                       {/* Course blocks */}
-                      {scheduleByDay[day].map(course => {
-                        const startMin = timeToMinutes(course.startTime)
-                        const endMin = timeToMinutes(course.endTime)
+                      {scheduleByDay[day].map(schedule => {
+                        const startMin = timeToMinutes(schedule.startTime)
+                        const endMin = timeToMinutes(schedule.endTime)
                         const top = ((startMin - GRID_START) / 30) * ROW_HEIGHT
                         const height = ((endMin - startMin) / 30) * ROW_HEIGHT
 
                         return (
                           <div
-                            key={course.id}
+                            key={schedule.id}
                             className="ss-event"
                             style={{
                               top: `${top}px`,
                               height: `${height}px`,
-                              background: `${course.color}18`,
-                              borderLeft: `3px solid ${course.color}`,
-                              color: course.color,
+                              background: `${schedule.color}18`,
+                              borderLeft: `3px solid ${schedule.color}`,
+                              color: schedule.color,
                             }}
-                            onClick={() => setSelectedCourse(course)}
+                            onClick={() => setSelectedCourse(schedule)}
                           >
-                            <span className="ss-event__icon">{course.icon}</span>
+                            <span className="ss-event__icon">{schedule.icon}</span>
                             <div className="ss-event__content">
-                              <p className="ss-event__name">{course.name}</p>
+                              <p className="ss-event__name">{schedule.name}</p>
                               <p className="ss-event__time">
-                                {formatTime12(course.startTime)} – {formatTime12(course.endTime)}
+                                {formatTime12(schedule.startTime)} – {formatTime12(schedule.endTime)}
                               </p>
-                              <p className="ss-event__room">{course.room}</p>
+                              <p className="ss-event__room">{schedule.room}</p>
                             </div>
                           </div>
                         )
@@ -351,7 +383,7 @@ export default function StudentSchedule() {
                             key={course.id}
                             className="ss-list-item"
                             style={{ borderLeft: `4px solid ${course.color}` }}
-                            onClick={() => navigate(`/course/${course.id}`)}
+                            onClick={() => navigate(`/student/courses/${course.courseId}`)}
                           >
                             <div className="ss-list-item__time">
                               <p className="ss-list-item__start">{formatTime12(course.startTime)}</p>
@@ -408,7 +440,7 @@ export default function StudentSchedule() {
                           <div
                             key={course.id}
                             className="ss-upcoming-item"
-                            onClick={() => navigate(`/course/${course.id}`)}
+                            onClick={() => navigate(`/student/courses/${course.courseId}`)}
                           >
                             <div
                               className="ss-upcoming-item__dot"
@@ -475,7 +507,7 @@ export default function StudentSchedule() {
             <button
               className="ss-modal__btn"
               style={{ background: selectedCourse.color }}
-              onClick={() => { setSelectedCourse(null); navigate(`/course/${selectedCourse.id}`) }}
+              onClick={() => { setSelectedCourse(null); navigate(`/student/courses/${selectedCourse.courseId}`) }}
             >
               View Course Details
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

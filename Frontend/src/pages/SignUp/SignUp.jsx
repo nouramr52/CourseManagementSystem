@@ -18,6 +18,13 @@ export default function SignUp() {
   const [isLoading, setIsLoading] = useState(false)
   const [apiError, setApiError] = useState('')
   const [googleLoading, setGoogleLoading] = useState(false)
+  const [acceptedTerms, setAcceptedTerms] = useState(false)
+  const [passwordValidation, setPasswordValidation] = useState({
+    minLength: false,
+    hasUpperCase: false,
+    hasLowerCase: false,
+    hasNumber: false,
+  })
 
   const validateForm = () => {
     const newErrors = {}
@@ -57,6 +64,11 @@ export default function SignUp() {
       newErrors.role = 'Please select a role'
     }
 
+    // Terms and conditions validation
+    if (!acceptedTerms) {
+      newErrors.terms = 'You must accept the Terms and Conditions'
+    }
+
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -64,6 +76,17 @@ export default function SignUp() {
   const handleChange = (e) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
+    
+    // Real-time password validation
+    if (name === 'password') {
+      setPasswordValidation({
+        minLength: value.length >= 8,
+        hasUpperCase: /[A-Z]/.test(value),
+        hasLowerCase: /[a-z]/.test(value),
+        hasNumber: /\d/.test(value),
+      })
+    }
+    
     // Clear error for this field when user starts typing
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }))
@@ -72,6 +95,11 @@ export default function SignUp() {
     if (apiError) {
       setApiError('')
     }
+  }
+
+  const handleConfirmPasswordPaste = (e) => {
+    e.preventDefault()
+    return false
   }
 
   const handleSubmit = async (e) => {
@@ -90,19 +118,22 @@ export default function SignUp() {
         role: formData.role,
       });
 
-      // ✅ Save real token from backend
-      localStorage.setItem("token", res.data.token);
-      localStorage.setItem("user", JSON.stringify(res.data.user));
-
-      // Redirect based on role
-      const role = res.data.user.role?.toUpperCase()
-      if (role === 'ADMIN') {
-        navigate('/admin/dashboard')
-      } else if (role === 'INSTRUCTOR') {
-        navigate('/instructor/dashboard')
-      } else {
-        navigate('/dashboard')
+      // Show success message if user already exists but not verified
+      if (res.data.message && res.data.message.includes('exists but not verified')) {
+        // Show a brief success message
+        setApiError(''); // Clear any errors
       }
+
+      // Redirect to email verification page
+      navigate('/verify-email', {
+        state: {
+          email: formData.email,
+          name: formData.name,
+          token: res.data.token,
+          user: res.data.user,
+          message: res.data.message
+        }
+      });
 
     } catch (err) {
       setApiError(
@@ -306,6 +337,34 @@ export default function SignUp() {
                     )}
                   </button>
                 </div>
+                {formData.password && (
+                  <div className="password-requirements">
+                    <div className={`password-requirement ${passwordValidation.minLength ? 'valid' : ''}`}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                      At least 8 characters
+                    </div>
+                    <div className={`password-requirement ${passwordValidation.hasUpperCase ? 'valid' : ''}`}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                      One uppercase letter
+                    </div>
+                    <div className={`password-requirement ${passwordValidation.hasLowerCase ? 'valid' : ''}`}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                      One lowercase letter
+                    </div>
+                    <div className={`password-requirement ${passwordValidation.hasNumber ? 'valid' : ''}`}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                      One number
+                    </div>
+                  </div>
+                )}
                 {errors.password && (
                   <span className="auth-page__error">{errors.password}</span>
                 )}
@@ -326,6 +385,7 @@ export default function SignUp() {
                     name="confirmPassword"
                     value={formData.confirmPassword}
                     onChange={handleChange}
+                    onPaste={handleConfirmPasswordPaste}
                     className={`auth-page__input ${errors.confirmPassword ? 'auth-page__input--error' : ''}`}
                     placeholder="Confirm your password"
                     autoComplete="new-password"
@@ -354,15 +414,29 @@ export default function SignUp() {
                 )}
               </div>
 
-              <label className="auth-page__checkbox" style={{ marginTop: '0.5rem' }}>
-                <input type="checkbox" required />
-                <span style={{ fontSize: '0.85rem' }}>
-                  I agree to the{' '}
-                  <Link to="/terms" className="auth-page__link">Terms of Service</Link>
-                  {' '}and{' '}
-                  <Link to="/privacy" className="auth-page__link">Privacy Policy</Link>
-                </span>
-              </label>
+              <div className="auth-page__form-group">
+                <label className="auth-page__checkbox" style={{ marginTop: '0.5rem' }}>
+                  <input 
+                    type="checkbox" 
+                    checked={acceptedTerms}
+                    onChange={(e) => {
+                      setAcceptedTerms(e.target.checked)
+                      if (errors.terms) {
+                        setErrors(prev => ({ ...prev, terms: '' }))
+                      }
+                    }}
+                  />
+                  <span style={{ fontSize: '0.85rem' }}>
+                    I agree to the{' '}
+                    <Link to="/terms" className="auth-page__link">Terms of Service</Link>
+                    {' '}and{' '}
+                    <Link to="/privacy" className="auth-page__link">Privacy Policy</Link>
+                  </span>
+                </label>
+                {errors.terms && (
+                  <span className="auth-page__error" style={{ marginTop: '0.25rem' }}>{errors.terms}</span>
+                )}
+              </div>
 
               <button
                 type="submit"
