@@ -1,5 +1,5 @@
 import api from "./axios";
-import { supabase } from "../config/supabase";
+import { getSupabase } from "../config/supabase";
 
 export const registerUser = (data) => {
     return api.post("/auth/signup", data);
@@ -10,7 +10,7 @@ export const loginUser = (data) => {
 };
 
 export const loginWithGoogle = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
+    const { error } = await getSupabase().auth.signInWithOAuth({
         provider: "google",
         options: {
             redirectTo: `${window.location.origin}/auth/callback`,
