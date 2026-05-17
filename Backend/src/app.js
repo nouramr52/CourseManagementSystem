@@ -5,6 +5,8 @@ import courseRoutes from "./routes/courseRoutes.js";
 import enrollmentRoutes from "./routes/enrollmentRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import errorMiddleware from "./middlewares/errorMiddleware.js";
+import instructorRoutes from "./routes/instructorRoutes.js";
+import scheduleRoutes from "./routes/scheduleRoutes.js";
 
 const app = express();
 
@@ -22,5 +24,9 @@ app.use("/api/users",       userRoutes);
 
 // Global error handler — must be registered LAST (SRP: one place for error formatting)
 app.use(errorMiddleware);
+app.use("/api/materials", materialRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/instructor", instructorRoutes);
+app.use("/api/schedules", scheduleRoutes);
 
 export default app;

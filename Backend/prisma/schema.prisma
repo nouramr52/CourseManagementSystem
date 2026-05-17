@@ -41,6 +41,11 @@ model User {
   password  String?                   // nullable for Google sign-in users
   role      Role     @default(STUDENT)
   createdAt DateTime @default(now())
+  
+  // Email verification fields
+  isEmailVerified Boolean  @default(false)
+  emailOtp        String?
+  otpExpiresAt    DateTime?
 
   // A user with role INSTRUCTOR can own many courses
   coursesCreated Course[]     @relation("InstructorCourses")
