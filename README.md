@@ -6,24 +6,62 @@ A full-stack web application for managing courses, instructors, and students wit
 
 The Course Management System is a modern platform for academic course administration featuring:
 
-- **User Authentication** — JWT + Supabase OAuth with token expiry (7 days)
+- **User Authentication** — JWT + Supabase OAuth with bcrypt password hashing
 - **Course Management & Enrollment** — Create, manage, and enroll in courses
-- **Instructor Dashboard** — Track students and course materials
+- **Instructor Dashboard** — Track students and manage course schedules
+- **Schedule Conflict Detection** — Prevents instructor scheduling overlaps
 - **Role-Based Access Control** — Student, Instructor, and Admin roles
-- **File Management** — Upload course materials
+- **File Management** — Upload and manage course materials
 
-**Architecture Highlights:**
-- **Factory Pattern** — Centralized JWT token creation (`authFactory.js`)
-- **Observer Pattern** — Event-driven side effects (`eventEmitter.js`)
-- **Repository Pattern** — Data access abstraction
-- **Service Layer Pattern** — Business logic separation
-- **MVC + DIP** — Controllers, Services, Repositories follow SOLID principles
-- **Middleware Factory** — Role-based authorization
-- **DTO Validation** — Input validation at request boundary
-- **Centralized Error Handling** — Consistent error responses
-- **DRY Helpers** — Shared utility functions (`helpers.js`)
+### Design Patterns & SOLID Principles
 
-All patterns follow **SOLID principles** (SRP, OCP, LSP, ISP, DIP).
+**Repository Pattern** (`repositories/`)
+- Data access layer abstraction (courseRepos, enrollmentRepo, userRepos)
+- Services never call Prisma directly — always through repositories
+- Decouples business logic from database implementation
+
+**Service Layer Pattern** (`services/`)
+- Business logic isolated from HTTP and database layers
+- Services contain validation, conflict detection, and authorization checks
+- Controllers call services instead of directly manipulating data
+
+**MVC Architecture**
+- **Model:** Prisma schema defines data models
+- **View:** JSON API responses
+- **Controller:** HTTP request handlers (`controllers/`)
+- **Service:** Business logic layer
+- **Repository:** Data access layer
+
+**Singleton Pattern** (`config/db.js`)
+- Single PrismaClient instance shared across entire application
+- Prevents connection pool exhaustion from multiple instances
+
+**Single Responsibility Principle (SRP)**
+- Controllers: HTTP parsing and response formatting only
+- Services: Business logic and validation only
+- Repositories: Database queries only
+- Each layer has exactly one reason to change
+
+**Dependency Inversion Principle (DIP)**
+- Services depend on repositories (abstractions), not Prisma directly
+- Controllers depend on services, not business logic implementation
+- Easy to swap implementations without affecting calling code
+
+**Interface Segregation Principle (ISP)**
+- Repositories expose only the methods each service needs
+- Controllers receive only relevant data from services
+- No bloated interfaces or unnecessary data exposure
+
+**Open/Closed Principle (OCP)**
+- Authorization checks centralized in services
+- New roles can be added to middleware without modifying existing logic
+- Schedule conflict detection is isolated and reusable
+
+**Code Quality**
+- Helper functions (`toMinutes`, `timesOverlap`) encapsulated in services
+- Middleware-based authentication and authorization
+- Consistent error handling with descriptive error messages
+- Clean separation of concerns across all layers
 
 ## Technologies Used
 
@@ -37,7 +75,8 @@ All patterns follow **SOLID principles** (SRP, OCP, LSP, ISP, DIP).
 - Node.js + Express 5.2.1
 - Prisma 6.19.3 (ORM)
 - PostgreSQL (via Supabase)
-- JWT + Bcrypt authentication
+- JWT authentication
+- Bcrypt password hashing
 - Multer 2.1.1 file uploads
 
 ## Setup Instructions
@@ -109,4 +148,3 @@ Frontend runs on `http://localhost:5173`
 - **Sherry Nader**
 - **Youssef Diaa**
 - **Abdelrahman Fouda**
-
