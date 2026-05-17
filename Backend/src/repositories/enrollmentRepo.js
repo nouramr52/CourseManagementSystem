@@ -50,6 +50,23 @@ export const getEnrollmentsByCourse = (courseId) => {
     });
 };
 
+// Return all schedule slots across a student's ACTIVE enrollments.
+// Used for schedule conflict detection before a new enrollment.
+export const getActiveSchedulesByStudent = (studentId) => {
+    return prisma.schedule.findMany({
+        where: {
+            course: {
+                enrollments: {
+                    some: { studentId, status: "ACTIVE" }
+                }
+            }
+        },
+        include: {
+            course: { select: { id: true, title: true } }
+        }
+    });
+};
+
 // Count how many active enrollments a course currently has.
 // Used to check if the course is full before allowing a new enrollment.
 export const countEnrollments = (courseId) => {

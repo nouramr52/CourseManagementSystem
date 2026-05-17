@@ -798,3 +798,55 @@
     text-align: center;
   }
 }
+
+/* ── Conflict styles ─────────────────────────────────────────────────────── */
+
+/* Conflict warning banner */
+.ss-conflict-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  background: #fef2f2;
+  border: 1.5px solid #fecaca;
+  border-radius: 12px;
+  margin-bottom: 1.25rem;
+}
+
+.ss-conflict-banner__icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.ss-conflict-banner__title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #dc2626;
+  margin-bottom: 0.35rem;
+}
+
+.ss-conflict-banner__detail {
+  font-size: 0.85rem;
+  color: #b91c1c;
+  margin-bottom: 0.2rem;
+}
+
+.ss-conflict-banner__hint {
+  font-size: 0.8rem;
+  color: #ef4444;
+  margin-top: 0.4rem;
+  font-style: italic;
+}
+
+/* Conflicting event block */
+.ss-event--conflict {
+  z-index: 2;
+}
+
+.ss-event__conflict-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  font-size: 0.7rem;
+}

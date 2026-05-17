@@ -50,6 +50,11 @@ function timeToMinutes(t) {
   return h * 60 + m
 }
 
+function timesOverlap(startA, endA, startB, endB) {
+  return timeToMinutes(startA) < timeToMinutes(endB) &&
+         timeToMinutes(endA)   > timeToMinutes(startB)
+}
+
 function formatTime12(t) {
   const [h, m] = t.split(':').map(Number)
   const ampm = h >= 12 ? 'PM' : 'AM'
@@ -303,6 +308,37 @@ export default function StudentSchedule() {
           ) : view === 'week' ? (
             /* ===== WEEK VIEW ===== */
             <div className="ss-week-wrap">
+
+              {/* Conflict warning banner */}
+              {(() => {
+                const conflicts = []
+                DAYS.forEach(day => {
+                  const dayS = scheduleByDay[day]
+                  const sorted = [...dayS].sort((a,b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime))
+                  for (let i = 0; i < sorted.length; i++) {
+                    for (let j = i + 1; j < sorted.length; j++) {
+                      if (timesOverlap(sorted[i].startTime, sorted[i].endTime, sorted[j].startTime, sorted[j].endTime)) {
+                        conflicts.push({ day: DAY_LABELS[day], a: sorted[i].name, b: sorted[j].name })
+                      }
+                    }
+                  }
+                })
+                if (conflicts.length === 0) return null
+                return (
+                  <div className="ss-conflict-banner">
+                    <span className="ss-conflict-banner__icon">⚠️</span>
+                    <div>
+                      <p className="ss-conflict-banner__title">Schedule Conflicts Detected</p>
+                      {conflicts.map((c, i) => (
+                        <p key={i} className="ss-conflict-banner__detail">
+                          {c.day}: <strong>{c.a}</strong> overlaps with <strong>{c.b}</strong>
+                        </p>
+                      ))}
+                      <p className="ss-conflict-banner__hint">Drop one of the conflicting courses to resolve this.</p>
+                    </div>
+                  </div>
+                )
+              })()}
               <div className="ss-week">
                 {/* Time column */}
                 <div className="ss-time-col">
@@ -327,37 +363,68 @@ export default function StudentSchedule() {
                         <div key={slot} className={`ss-grid-line ${i % 2 === 0 ? 'ss-grid-line--hour' : ''}`} />
                       ))}
 
-                      {/* Course blocks */}
-                      {scheduleByDay[day].map(schedule => {
-                        const startMin = timeToMinutes(schedule.startTime)
-                        const endMin = timeToMinutes(schedule.endTime)
-                        const top = ((startMin - GRID_START) / 30) * ROW_HEIGHT
-                        const height = ((endMin - startMin) / 30) * ROW_HEIGHT
+                      {/* Course blocks — detect overlaps and split into columns */}
+                      {(() => {
+                        const daySchedules = scheduleByDay[day]
+                        if (daySchedules.length === 0) return null
 
-                        return (
-                          <div
-                            key={schedule.id}
-                            className="ss-event"
-                            style={{
-                              top: `${top}px`,
-                              height: `${height}px`,
-                              background: `${schedule.color}18`,
-                              borderLeft: `3px solid ${schedule.color}`,
-                              color: schedule.color,
-                            }}
-                            onClick={() => setSelectedCourse(schedule)}
-                          >
-                            <span className="ss-event__icon">{schedule.icon}</span>
-                            <div className="ss-event__content">
-                              <p className="ss-event__name">{schedule.name}</p>
-                              <p className="ss-event__time">
-                                {formatTime12(schedule.startTime)} – {formatTime12(schedule.endTime)}
-                              </p>
-                              <p className="ss-event__room">{schedule.room}</p>
-                            </div>
-                          </div>
+                        // Sort by start time
+                        const sorted = [...daySchedules].sort(
+                          (a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime)
                         )
-                      })}
+
+                        // Assign column index to each event to avoid overlap
+                        const columns = []   // columns[i] = end time of last event in that column
+                        const colAssign = sorted.map(s => {
+                          const start = timeToMinutes(s.startTime)
+                          const col = columns.findIndex(endMin => endMin <= start)
+                          if (col === -1) {
+                            columns.push(timeToMinutes(s.endTime))
+                            return columns.length - 1
+                          }
+                          columns[col] = timeToMinutes(s.endTime)
+                          return col
+                        })
+                        const totalCols = columns.length
+
+                        return sorted.map((schedule, i) => {
+                          const startMin = timeToMinutes(schedule.startTime)
+                          const endMin   = timeToMinutes(schedule.endTime)
+                          const top      = ((startMin - GRID_START) / 30) * ROW_HEIGHT
+                          const height   = ((endMin - startMin) / 30) * ROW_HEIGHT
+                          const col      = colAssign[i]
+                          const isConflict = totalCols > 1
+
+                          return (
+                            <div
+                              key={schedule.id}
+                              className={`ss-event ${isConflict ? 'ss-event--conflict' : ''}`}
+                              style={{
+                                top:      `${top}px`,
+                                height:   `${height}px`,
+                                left:     `${(col / totalCols) * 100}%`,
+                                width:    `${(1 / totalCols) * 100}%`,
+                                background: isConflict ? '#fef2f2' : `${schedule.color}18`,
+                                borderLeft: `3px solid ${isConflict ? '#ef4444' : schedule.color}`,
+                                color:      isConflict ? '#ef4444' : schedule.color,
+                              }}
+                              onClick={() => setSelectedCourse(schedule)}
+                            >
+                              {isConflict && (
+                                <span className="ss-event__conflict-badge">⚠️</span>
+                              )}
+                              <span className="ss-event__icon">{schedule.icon}</span>
+                              <div className="ss-event__content">
+                                <p className="ss-event__name">{schedule.name}</p>
+                                <p className="ss-event__time">
+                                  {formatTime12(schedule.startTime)} – {formatTime12(schedule.endTime)}
+                                </p>
+                                <p className="ss-event__room">{schedule.room}</p>
+                              </div>
+                            </div>
+                          )
+                        })
+                      })()}
                     </div>
                   </div>
                 ))}

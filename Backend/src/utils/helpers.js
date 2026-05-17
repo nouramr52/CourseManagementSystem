@@ -60,5 +60,9 @@ export const errorStatus = (message, fallback = 500) => {
         "Invalid email or password":           401,
         "Invalid or expired Google token":     401,
     };
+
+    // Dynamic conflict messages start with "Schedule conflict:"
+    if (message?.startsWith("Schedule conflict:")) return 409;
+
     return map[message] ?? fallback;
 };

@@ -51,23 +51,32 @@ export default function LoggedInHome({ user }) {
     setTimeout(() => setToast(null), 3000)
   }
 
+  // Update local seat count immediately after enroll/drop
+  const updateSeatCount = (courseId, delta) => {
+    setCourses(prev => prev.map(c =>
+      c.id === courseId
+        ? { ...c, _count: { ...c._count, enrollments: (c._count?.enrollments ?? 0) + delta } }
+        : c
+    ))
+  }
+
   const handleEnroll = async (course) => {
     setEnrollingId(course.id)
     try {
       await enrollInCourse(course.id)
       setEnrolledIds(p => [...p, course.id])
+      updateSeatCount(course.id, +1)
       showToast(`Enrolled in ${course.title}!`)
     } catch (err) {
       showToast(err.response?.data?.message || 'Enrollment failed', 'error')
-    } finally {
-      setEnrollingId(null)
-    }
+    } finally { setEnrollingId(null) }
   }
 
   const handleDrop = async (course) => {
     try {
       await dropCourse(course.id)
       setEnrolledIds(p => p.filter(id => id !== course.id))
+      updateSeatCount(course.id, -1)
       showToast(`Dropped ${course.title}.`, 'info')
     } catch (err) {
       showToast(err.response?.data?.message || 'Failed to drop', 'error')

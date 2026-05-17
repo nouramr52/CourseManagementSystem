@@ -143,14 +143,22 @@ export default function CourseCard({
 
         {/* ── Action buttons ── */}
         {isGuest ? (
-          /* Guest — View Details only */
-          <button
-            className="course-card__btn cc-btn--primary"
-            style={{ background: '#4f46e5' }}
-            onClick={() => navigate(`/course/${course.id}`)}
-          >
-            View Details
-          </button>
+          /* Guest — View Details + Sign in to enroll */
+          <div className="cc-actions">
+            <button
+              className="course-card__btn cc-btn--primary"
+              style={{ background: palette.color }}
+              onClick={() => onEnroll?.(course)}
+            >
+              Enroll Now
+            </button>
+            <button
+              className="course-card__btn cc-btn--outline"
+              onClick={() => navigate(`/course/${course.id}`)}
+            >
+              View Details
+            </button>
+          </div>
 
         ) : isEnrolled ? (
           /* Enrolled — View Details + Drop */
