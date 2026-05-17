@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import Navbar from '../../components/shared/Navbar/Navbar'
 import Footer from '../../components/shared/Footer/Footer'
 import { getCourseById } from '../../api/courseApi'
+import { getMyEnrollments } from '../../api/enrollmentApi'
 import './CourseDetails.css'
 
 const DEPT_COLORS = {
@@ -20,25 +21,53 @@ const DEPT_COLORS = {
 
 const DEFAULT_ICONS = ['🗄️','⚙️','🌐','💻','🔐','📊','🤖','📚','🧮','📡']
 
+const MATERIAL_ICONS = {
+  PDF:  '📕',
+  PPT:  '📊',
+  DOC:  '📝',
+  ZIP:  '🗜️',
+  LINK: '🔗',
+}
+
 export default function CourseDetails() {
   const { id }    = useParams()
   const navigate  = useNavigate()
   const [course,  setCourse]  = useState(null)
   const [loading, setLoading] = useState(true)
   const [error,   setError]   = useState(null)
+  const [isEnrolled, setIsEnrolled] = useState(false)
 
   const isLoggedIn = !!localStorage.getItem('token')
   const user       = (() => { try { return JSON.parse(localStorage.getItem('user')) } catch { return null } })()
+  const isStudent  = user?.role?.toUpperCase() === 'STUDENT'
 
   useEffect(() => {
-    getCourseById(id)
-      .then(res => setCourse(res.data))
-      .catch(err => {
+    const fetchData = async () => {
+      try {
+        const courseRes = await getCourseById(id)
+        setCourse(courseRes.data)
+
+        // Check enrollment only for logged-in students
+        if (isLoggedIn && isStudent) {
+          try {
+            const enrollRes = await getMyEnrollments()
+            const enrolled = enrollRes.data.some(
+              e => e.courseId === parseInt(id) && e.status === 'ACTIVE'
+            )
+            setIsEnrolled(enrolled)
+          } catch {
+            // enrollment check failing shouldn't break the page
+          }
+        }
+      } catch (err) {
         const msg = err.response?.data?.message || err.message || 'Failed to load course.'
         setError(msg)
-      })
-      .finally(() => setLoading(false))
-  }, [id])
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
+  }, [id, isLoggedIn, isStudent])
 
   if (loading) {
     return (
@@ -207,30 +236,53 @@ export default function CourseDetails() {
                   Course Materials
                 </h2>
                 <div className="materials-list">
-                  {course.materials.map((m) => (
-                    <div key={m.id} className="material-item">
-                      <div className="material-item__icon">📄</div>
-                      <div className="material-item__info">
-                        <h3 className="material-item__title">{m.title}</h3>
-                        {m.filePath && (
-                          <p className="material-item__meta">Available for download</p>
+                  {course.materials.map((m) => {
+                    const isLink = m.type === 'LINK'
+                    const hasFile = !isLink && m.url
+                    const canDownload = isEnrolled || user?.role?.toUpperCase() === 'INSTRUCTOR' || user?.role?.toUpperCase() === 'ADMIN'
+                    return (
+                      <div key={m.id} className="material-item">
+                        <div className="material-item__icon">
+                          {MATERIAL_ICONS[m.type] || '📄'}
+                        </div>
+                        <div className="material-item__info">
+                          <h3 className="material-item__title">{m.title}</h3>
+                          <p className="material-item__meta">
+                            {isLink ? 'External link' : m.type || 'File'}
+                            {!canDownload && ' · Enroll to access'}
+                          </p>
+                        </div>
+                        {canDownload && m.url && (
+                          isLink ? (
+                            <a
+                              href={m.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="material-item__download"
+                              aria-label="Open link"
+                              title="Open link"
+                            >
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+                              </svg>
+                            </a>
+                          ) : (
+                            <a
+                              href={m.url}
+                              download={m.title}
+                              className="material-item__download"
+                              aria-label="Download"
+                              title="Download"
+                            >
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                              </svg>
+                            </a>
+                          )
                         )}
                       </div>
-                      {m.filePath && (
-                        <a
-                          href={m.filePath}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="material-item__download"
-                          aria-label="Download"
-                        >
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-                          </svg>
-                        </a>
-                      )}
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
             )}
