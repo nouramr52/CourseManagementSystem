@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "../../config/supabase";
+import { getSupabase } from "../../config/supabase";
 import api from "../../api/axios";
 
 export default function AuthCallback() {
@@ -11,7 +11,7 @@ export default function AuthCallback() {
         const handleCallback = async () => {
             try {
                 // Supabase puts the session in the URL hash after OAuth redirect
-                const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+                const { data: { session }, error: sessionError } = await getSupabase().auth.getSession();
 
                 if (sessionError || !session) {
                     setError("Authentication failed. Please try again.");
@@ -39,7 +39,7 @@ export default function AuthCallback() {
                 } else if (role === "INSTRUCTOR") {
                     navigate("/instructor/dashboard");
                 } else {
-                    navigate("/dashboard");
+                    navigate("/");
                 }
             } catch (err) {
                 setError(err.response?.data?.message || "Authentication failed. Please try again.");
