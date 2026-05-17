@@ -28,6 +28,7 @@ export const EVENTS = {
     COURSE_CREATED:     "course:created",
     COURSE_DELETED:     "course:deleted",
     USER_REGISTERED:    "user:registered",
+    PASSWORD_RESET:     "password:reset",
 };
 
 // ── Default listeners (audit log to console) ──────────────────────────────
@@ -51,6 +52,10 @@ appEvents.on(EVENTS.COURSE_DELETED, ({ instructorId, courseId }) => {
 
 appEvents.on(EVENTS.USER_REGISTERED, ({ userId, email, role }) => {
     console.log(`[EVENT] New ${role} registered: ${email} (id=${userId})`);
+});
+
+appEvents.on(EVENTS.PASSWORD_RESET, ({ userId, email }) => {
+    console.log(`[EVENT] Password reset for user ${email} (id=${userId})`);
 });
 
 export default appEvents;

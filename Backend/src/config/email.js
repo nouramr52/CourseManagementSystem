@@ -36,7 +36,7 @@ export const initializeEmailService = async () => {
 };
 
 // Send OTP email
-export const sendOTPEmail = async (email, otp, name) => {
+export const sendOTPEmail = async (email, otp, name, purpose = "Email Verification") => {
     if (!transporter) {
         console.log('⚠️ Transporter not initialized, initializing now...');
         await initializeEmailService();
@@ -49,10 +49,17 @@ export const sendOTPEmail = async (email, otp, name) => {
         from: process.env.EMAIL_FROM || 'noreply@coursemanagement.com'
     });
 
+    const isPasswordReset = purpose === "Password Reset";
+    const subject = isPasswordReset ? 'Reset Your Password - OTP Code' : 'Verify Your Email - OTP Code';
+    const headerText = isPasswordReset ? 'Password Reset' : 'Email Verification';
+    const bodyText = isPasswordReset 
+        ? 'You requested to reset your password. Use the OTP code below to proceed:'
+        : 'Thank you for signing up. To complete your registration, please verify your email address using the OTP code below:';
+
     const mailOptions = {
         from: process.env.EMAIL_FROM || '"Course Management System" <noreply@coursemanagement.com>',
         to: email,
-        subject: 'Verify Your Email - OTP Code',
+        subject: subject,
         html: `
             <!DOCTYPE html>
             <html>
@@ -72,11 +79,11 @@ export const sendOTPEmail = async (email, otp, name) => {
                 <div class="container">
                     <div class="header">
                         <h1>📚 Course Management System</h1>
-                        <p>Email Verification</p>
+                        <p>${headerText}</p>
                     </div>
                     <div class="content">
                         <h2>Hello ${name}!</h2>
-                        <p>Thank you for signing up. To complete your registration, please verify your email address using the OTP code below:</p>
+                        <p>${bodyText}</p>
                         
                         <div class="otp-box">
                             <p style="margin: 0; color: #6b7280; font-size: 14px;">Your OTP Code</p>

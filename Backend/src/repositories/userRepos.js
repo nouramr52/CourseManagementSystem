@@ -63,3 +63,16 @@ export const verifyUserOTP = (email) => {
         },
     });
 };
+
+// ─── PASSWORD RESET ────────────────────────────────────────────────────────
+
+export const updateUserPassword = (email, hashedPassword) => {
+    return prisma.user.update({
+        where: { email },
+        data: {
+            password: hashedPassword,
+            emailOtp: null,
+            otpExpiresAt: null,
+        },
+    });
+};

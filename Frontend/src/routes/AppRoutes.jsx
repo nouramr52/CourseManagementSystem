@@ -5,6 +5,7 @@ import Home from '../pages/Home/Home'
 import Login from '../pages/Login/Login'
 import SignUp from '../pages/SignUp/SignUp'
 import VerifyEmail from '../pages/VerifyEmail/VerifyEmail'
+import ForgotPassword from '../pages/ForgotPassword/ForgotPassword'
 import Dashboard from '../pages/Dashboard/Dashboard'
 import CourseDetails from '../pages/CourseDetails/CourseDetails'
 import StudentCourses from '../pages/StudentCourses/StudentCourses'
@@ -22,6 +23,7 @@ export default function AppRoutes() {
       <Route path="/login"                element={<Login />} />
       <Route path="/signup"               element={<SignUp />} />
       <Route path="/verify-email"         element={<VerifyEmail />} />
+      <Route path="/forgot-password"      element={<ForgotPassword />} />
       <Route path="/dashboard"            element={<Dashboard />} />
       <Route path="/courses"              element={<PublicCatalog />} />
       <Route path="/course/:id"           element={<CourseDetails />} />
