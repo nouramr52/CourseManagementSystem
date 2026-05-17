@@ -356,7 +356,23 @@ async function main() {
   console.log("🌱  Starting seed…\n");
 
   const defaultInstructorPassword = await bcrypt.hash("Instructor@123", 10);
-  const defaultStudentPassword = await bcrypt.hash("Student@123", 10);
+  const defaultStudentPassword    = await bcrypt.hash("Student@123", 10);
+  const adminPassword             = await bcrypt.hash("Fouda1234", 10);
+
+  // ── 0. Upsert admin account ────────────────────────────────────────────────
+  console.log("🛡️   Upserting admin account…");
+  const admin = await prisma.user.upsert({
+    where:  { email: "abdelrahmanfouda17@gmail.com" },
+    update: { name: "Admin", role: "ADMIN", password: adminPassword, isEmailVerified: true },
+    create: {
+      name:            "Admin",
+      email:           "abdelrahmanfouda17@gmail.com",
+      password:        adminPassword,
+      role:            "ADMIN",
+      isEmailVerified: true,
+    },
+  });
+  console.log(`  ✅  Admin ready  (id=${admin.id})\n`);
 
   // ── 1. Upsert instructors ──────────────────────────────────────────────────
   console.log("👨‍🏫  Upserting instructors…");
@@ -474,7 +490,10 @@ async function main() {
   // ── Summary ────────────────────────────────────────────────────────────────
   console.log("\n✨  Seed complete!\n");
   console.log("─────────────────────────────────────────────────────");
-  console.log("Instructor credentials (password: Instructor@123):");
+  console.log("Admin credentials:");
+  console.log("  Email:    abdelrahmanfouda17@gmail.com");
+  console.log("  Password: Fouda1234");
+  console.log("\nInstructor credentials (password: Instructor@123):");
   for (const inst of INSTRUCTORS) {
     console.log(`  ${inst.email}`);
   }

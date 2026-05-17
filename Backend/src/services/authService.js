@@ -65,18 +65,15 @@ export const registerUser = async (data) => {
 
     // New user registration
     const hashedPassword = await bcrypt.hash(password, 10);
-<<<<<<< HEAD
-    const newUser = await createUser({ name, email, password: hashedPassword, role });
-=======
 
     // Generate OTP
     const otp = generateOTP();
     const otpExpiresAt = getOTPExpiry();
 
-    const newUser = await createUser({ 
-        name, 
-        email, 
-        password: hashedPassword, 
+    const newUser = await createUser({
+        name,
+        email,
+        password: hashedPassword,
         role,
         emailOtp: otp,
         otpExpiresAt: otpExpiresAt,
@@ -90,7 +87,6 @@ export const registerUser = async (data) => {
         console.error('Failed to send OTP email:', emailError);
         // Continue registration even if email fails
     }
->>>>>>> sherry
 
     // Observer: notify listeners a new user registered
     appEvents.emit(EVENTS.USER_REGISTERED, {
@@ -99,22 +95,23 @@ export const registerUser = async (data) => {
         role:   newUser.role,
     });
 
-<<<<<<< HEAD
-    return createAuthResponse(newUser);   // Factory
-=======
+    const token = jwt.sign(
+        { id: newUser.id, role: newUser.role },
+        process.env.JWT_SECRET
+    );
+
     return {
-        user: { 
-            id: newUser.id, 
-            name: newUser.name, 
-            email: newUser.email, 
-            role: newUser.role, 
+        user: {
+            id: newUser.id,
+            name: newUser.name,
+            email: newUser.email,
+            role: newUser.role,
             createdAt: newUser.createdAt,
             isEmailVerified: newUser.isEmailVerified
         },
         token,
         message: 'Registration successful! Please check your email for OTP verification.'
     };
->>>>>>> sherry
 };
 
 // ─── LOGIN ─────────────────────────────────────────────────────────────────

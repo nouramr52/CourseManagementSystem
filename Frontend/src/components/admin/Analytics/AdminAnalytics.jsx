@@ -1,42 +1,48 @@
+import { useEffect, useState } from 'react'
+import adminService from '../../../services/adminService'
 import './AdminAnalytics.css'
 
-const summaryCards = [
-  { label: 'Total Enrollments', value: '1,284', sub: 'Across all courses' },
-  { label: 'Completion Rate',   value: '68%',   sub: 'Avg. across courses' },
-  { label: 'Avg. Course Rating', value: '4.6',  sub: 'Out of 5.0' },
-  { label: 'Active This Month', value: '342',   sub: 'Unique active users' },
-]
+const courseColors = ['#4f46e5', '#06b6d4', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444', '#0ea5e9', '#14b8a6']
 
-const monthlyEnrollments = [
-  { month: 'Jan', value: 80,  max: 200 },
-  { month: 'Feb', value: 95,  max: 200 },
-  { month: 'Mar', value: 110, max: 200 },
-  { month: 'Apr', value: 130, max: 200 },
-  { month: 'May', value: 160, max: 200 },
-  { month: 'Jun', value: 145, max: 200 },
-  { month: 'Jul', value: 120, max: 200 },
-  { month: 'Aug', value: 175, max: 200 },
-  { month: 'Sep', value: 200, max: 200 },
-  { month: 'Oct', value: 185, max: 200 },
-  { month: 'Nov', value: 165, max: 200 },
-  { month: 'Dec', value: 140, max: 200 },
-]
-
-const userDistribution = [
-  { label: 'Students',    pct: 82, color: '#4f46e5' },
-  { label: 'Instructors', pct: 15, color: '#10b981' },
-  { label: 'Admins',      pct: 3,  color: '#ef4444' },
-]
-
-const topCourses = [
-  { name: 'Data Structures',      code: 'CS201', color: '#10b981', students: 34, rating: 4.8, completion: 72 },
-  { name: 'Database Systems',     code: 'CS301', color: '#4f46e5', students: 28, rating: 4.7, completion: 68 },
-  { name: 'Software Engineering', code: 'CS402', color: '#06b6d4', students: 25, rating: 4.6, completion: 65 },
-  { name: 'Machine Learning',     code: 'CS501', color: '#f59e0b', students: 18, rating: 4.9, completion: 55 },
-  { name: 'Algorithms',           code: 'CS302', color: '#0ea5e9', students: 30, rating: 4.5, completion: 70 },
-]
+function Spinner() {
+  return <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>Loading…</div>
+}
 
 export default function AdminAnalytics() {
+  const [data, setData]       = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError]     = useState(null)
+
+  useEffect(() => {
+    adminService.getAnalytics()
+      .then(setData)
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false))
+  }, [])
+
+  if (loading) return <Spinner />
+  if (error)   return <div style={{ padding: '2rem', color: '#ef4444' }}>Error: {error}</div>
+
+  const { stats, topCourses, monthlyEnrollments } = data
+
+  // Build user distribution from real stats
+  const totalUsers = stats.totalUsers || 1
+  const userDistribution = [
+    { label: 'Students',    count: stats.totalStudents,    color: '#4f46e5' },
+    { label: 'Instructors', count: stats.totalInstructors, color: '#10b981' },
+    { label: 'Admins',      count: stats.totalAdmins,      color: '#ef4444' },
+  ].map((u) => ({ ...u, pct: Math.round((u.count / totalUsers) * 100) }))
+
+  // Max value for monthly bar chart scaling
+  const maxMonthly = Math.max(...(monthlyEnrollments.map((m) => m.count)), 1)
+
+  const summaryCards = [
+    { label: 'Total Enrollments',  value: stats.totalEnrollments,  sub: 'Across all courses' },
+    { label: 'Active Enrollments', value: stats.activeEnrollments, sub: 'Currently active' },
+    { label: 'Total Courses',      value: stats.totalCourses,      sub: 'On the platform' },
+    { label: 'Total Users',        value: stats.totalUsers,        sub: 'Students + instructors' },
+  ]
+
   return (
     <div className="admin-analytics">
       <div>
@@ -49,7 +55,7 @@ export default function AdminAnalytics() {
         {summaryCards.map((c) => (
           <div className="admin-analytics__card" key={c.label}>
             <span className="admin-analytics__card-label">{c.label}</span>
-            <span className="admin-analytics__card-value">{c.value}</span>
+            <span className="admin-analytics__card-value">{c.value.toLocaleString()}</span>
             <span className="admin-analytics__card-sub">{c.sub}</span>
           </div>
         ))}
@@ -60,24 +66,28 @@ export default function AdminAnalytics() {
 
         {/* Monthly Enrollments */}
         <div className="admin-chart-panel">
-          <div className="admin-chart-panel__title">Monthly Enrollments</div>
-          <div className="admin-bar-chart">
-            {monthlyEnrollments.map((m) => (
-              <div className="admin-bar-chart__row" key={m.month}>
-                <span className="admin-bar-chart__label">{m.month}</span>
-                <div className="admin-bar-chart__track">
-                  <div
-                    className="admin-bar-chart__fill"
-                    style={{
-                      width: `${(m.value / m.max) * 100}%`,
-                      background: 'linear-gradient(90deg, #4f46e5, #06b6d4)',
-                    }}
-                  />
+          <div className="admin-chart-panel__title">Monthly Enrollments (Last 12 Months)</div>
+          {monthlyEnrollments.length === 0 ? (
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem' }}>No enrollment data yet.</p>
+          ) : (
+            <div className="admin-bar-chart">
+              {monthlyEnrollments.map((m) => (
+                <div className="admin-bar-chart__row" key={m.month}>
+                  <span className="admin-bar-chart__label">{m.month}</span>
+                  <div className="admin-bar-chart__track">
+                    <div
+                      className="admin-bar-chart__fill"
+                      style={{
+                        width: `${(m.count / maxMonthly) * 100}%`,
+                        background: 'linear-gradient(90deg, #4f46e5, #06b6d4)',
+                      }}
+                    />
+                  </div>
+                  <span className="admin-bar-chart__value">{m.count}</span>
                 </div>
-                <span className="admin-bar-chart__value">{m.value}</span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* User Distribution */}
@@ -87,7 +97,7 @@ export default function AdminAnalytics() {
             {userDistribution.map((u) => (
               <div className="admin-donut__row" key={u.label}>
                 <div className="admin-donut__dot" style={{ background: u.color }} />
-                <span className="admin-donut__label">{u.label}</span>
+                <span className="admin-donut__label">{u.label} ({u.count})</span>
                 <div className="admin-donut__bar-track">
                   <div
                     className="admin-donut__bar-fill"
@@ -105,41 +115,52 @@ export default function AdminAnalytics() {
       {/* Top Courses */}
       <div className="admin-top-courses">
         <div className="admin-top-courses__header">
-          <span className="admin-top-courses__title">Top Performing Courses</span>
+          <span className="admin-top-courses__title">Top Enrolled Courses</span>
         </div>
-        <table className="admin-top-courses__table">
-          <thead>
-            <tr>
-              <th>Course</th>
-              <th>Students</th>
-              <th>Rating</th>
-              <th>Completion</th>
-            </tr>
-          </thead>
-          <tbody>
-            {topCourses.map((c) => (
-              <tr key={c.code}>
-                <td>
-                  <span className="admin-top-courses__dot" style={{ background: c.color }} />
-                  {c.name} <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>({c.code})</span>
-                </td>
-                <td>{c.students}</td>
-                <td>⭐ {c.rating}</td>
-                <td>
-                  <div className="admin-top-courses__progress-wrap">
-                    <div className="admin-top-courses__progress-track">
-                      <div
-                        className="admin-top-courses__progress-fill"
-                        style={{ width: `${c.completion}%`, background: c.color }}
-                      />
-                    </div>
-                    <span className="admin-top-courses__pct">{c.completion}%</span>
-                  </div>
-                </td>
+        {topCourses.length === 0 ? (
+          <p style={{ padding: '1.5rem', color: 'var(--text-muted)', fontSize: '0.88rem' }}>No courses yet.</p>
+        ) : (
+          <table className="admin-top-courses__table">
+            <thead>
+              <tr>
+                <th>Course</th>
+                <th>Instructor</th>
+                <th>Students</th>
+                <th>Capacity</th>
+                <th>Fill Rate</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {topCourses.map((c, i) => {
+                const enrolled = c._count?.enrollments ?? 0
+                const fill     = c.capacity > 0 ? Math.round((enrolled / c.capacity) * 100) : 0
+                const color    = courseColors[i % courseColors.length]
+                return (
+                  <tr key={c.id}>
+                    <td>
+                      <span className="admin-top-courses__dot" style={{ background: color }} />
+                      {c.title}
+                    </td>
+                    <td>{c.instructor?.name ?? '—'}</td>
+                    <td>{enrolled}</td>
+                    <td>{c.capacity}</td>
+                    <td>
+                      <div className="admin-top-courses__progress-wrap">
+                        <div className="admin-top-courses__progress-track">
+                          <div
+                            className="admin-top-courses__progress-fill"
+                            style={{ width: `${fill}%`, background: color }}
+                          />
+                        </div>
+                        <span className="admin-top-courses__pct">{fill}%</span>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        )}
       </div>
 
     </div>
