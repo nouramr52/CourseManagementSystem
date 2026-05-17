@@ -106,7 +106,9 @@ export const adminUpdateCourse = (id, data) => {
     });
 };
 
-export const adminDeleteCourse = (id) => {
+export const adminDeleteCourse = async (id) => {
+    // Delete related enrollments first (no cascade on enrollment FK)
+    await prisma.enrollment.deleteMany({ where: { courseId: id } });
     return prisma.course.delete({ where: { id } });
 };
 
