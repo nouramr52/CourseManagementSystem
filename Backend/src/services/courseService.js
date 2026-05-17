@@ -1,3 +1,12 @@
+/**
+ * courseService.js — Course business logic
+ *
+ * Uses:
+ *  - Repository Pattern — data access delegated to courseRepos
+ *  - Observer Pattern (appEvents) — side effects decoupled from core logic
+ *  - Shared helpers (timesOverlap) — DRY, no duplicated time logic
+ */
+
 import {
     createCourse,
     getAllCourses,
@@ -8,50 +17,24 @@ import {
     deleteCourse,
 } from "../repositories/courseRepos.js";
 
-// ─── HELPERS ───────────────────────────────────────────────────────────────
-
-// Convert "HH:MM" string to total minutes — makes time comparison simple
-const toMinutes = (timeStr) => {
-    const [h, m] = timeStr.split(":").map(Number);
-    return h * 60 + m;
-};
-
-// Returns true if two time ranges overlap on the same day.
-// Two slots overlap when: slotA starts before slotB ends AND slotA ends after slotB starts.
-const timesOverlap = (startA, endA, startB, endB) => {
-    return toMinutes(startA) < toMinutes(endB) &&
-           toMinutes(endA)   > toMinutes(startB);
-};
+import { timesOverlap } from "../utils/helpers.js";
+import appEvents, { EVENTS } from "../utils/eventEmitter.js";
 
 // ─── CREATE ────────────────────────────────────────────────────────────────
 
 export const addCourse = async ({ title, description, capacity, instructorId, schedules, dept, icon }) => {
-    if (!title || title.trim() === "") {
-        throw new Error("Course title is required");
-    }
-
-    if (!capacity || capacity < 1) {
-        throw new Error("Capacity must be at least 1");
-    }
-
-    // ── Schedule conflict check ──────────────────────────────────────────
-    // Only run if the instructor provided at least one schedule slot
+    // Schedule conflict check — only run if slots were provided
     if (schedules && schedules.length > 0) {
-
-        // Get all existing schedule slots for this instructor's courses
         const existing = await getSchedulesByInstructor(instructorId);
 
-        // Check each new slot against every existing slot
         for (const newSlot of schedules) {
             if (!newSlot.day || !newSlot.startTime || !newSlot.endTime) continue;
 
             for (const existingSlot of existing) {
-                // Only compare slots on the same day
                 if (existingSlot.day !== newSlot.day) continue;
 
                 if (timesOverlap(newSlot.startTime, newSlot.endTime,
                                  existingSlot.startTime, existingSlot.endTime)) {
-                    // Conflict found — tell the instructor exactly which course clashes
                     throw new Error(
                         `Schedule conflict: ${newSlot.day} ${newSlot.startTime}–${newSlot.endTime} ` +
                         `overlaps with "${existingSlot.course.title}" ` +
@@ -62,51 +45,42 @@ export const addCourse = async ({ title, description, capacity, instructorId, sc
         }
     }
 
-    // No conflicts — create the course
-    return createCourse({ title, description, capacity, instructorId, schedules, dept, icon });
+    const course = await createCourse({ title, description, capacity, instructorId, schedules, dept, icon });
+
+    // Observer: notify listeners a course was created
+    appEvents.emit(EVENTS.COURSE_CREATED, { instructorId, courseTitle: course.title });
+
+    return course;
 };
 
 // ─── READ ──────────────────────────────────────────────────────────────────
 
-// Return all courses — used by the public catalog page.
-export const fetchAllCourses = () => {
-    return getAllCourses();
-};
+export const fetchAllCourses = () => getAllCourses();
 
-// Return one course by id — used by the course detail page.
 export const fetchCourseById = async (id) => {
     const course = await getCourseById(id);
     if (!course) throw new Error("Course not found");
     return course;
 };
 
-// Return only the courses owned by a specific instructor.
-export const fetchMyCourses = (instructorId) => {
-    return getCoursesByInstructor(instructorId);
-};
+export const fetchMyCourses = (instructorId) => getCoursesByInstructor(instructorId);
 
 // ─── UPDATE ────────────────────────────────────────────────────────────────
 
-// Called when an instructor edits a course.
-// Checks ownership: only the instructor who created it (or an admin) can edit.
 export const editCourse = async (courseId, requesterId, requesterRole, data) => {
     const course = await getCourseById(courseId);
     if (!course) throw new Error("Course not found");
 
-    // Admins can edit any course; instructors can only edit their own
     if (requesterRole !== "ADMIN" && course.instructorId !== requesterId) {
         throw new Error("Forbidden");
     }
 
-    // Only allow updating safe fields — never let instructorId be changed here
     const { title, description, capacity } = data;
     return updateCourse(courseId, { title, description, capacity });
 };
 
 // ─── DELETE ────────────────────────────────────────────────────────────────
 
-// Called when an instructor deletes a course.
-// Same ownership check as edit.
 export const removeCourse = async (courseId, requesterId, requesterRole) => {
     const course = await getCourseById(courseId);
     if (!course) throw new Error("Course not found");
@@ -115,5 +89,8 @@ export const removeCourse = async (courseId, requesterId, requesterRole) => {
         throw new Error("Forbidden");
     }
 
-    return deleteCourse(courseId);
+    await deleteCourse(courseId);
+
+    // Observer: notify listeners a course was deleted
+    appEvents.emit(EVENTS.COURSE_DELETED, { instructorId: requesterId, courseId });
 };

@@ -33,7 +33,10 @@ export default function CourseDetails() {
   useEffect(() => {
     getCourseById(id)
       .then(res => setCourse(res.data))
-      .catch(() => setError('Course not found.'))
+      .catch(err => {
+        const msg = err.response?.data?.message || err.message || 'Failed to load course.'
+        setError(msg)
+      })
       .finally(() => setLoading(false))
   }, [id])
 

@@ -284,3 +284,10 @@
 .navbar__dropdown-item--danger:hover {
   background: #fef2f2;
 }
+
+/* Active nav link */
+.navbar__link--active {
+  color: var(--primary);
+  background: rgba(79, 70, 229, 0.08);
+  font-weight: 600;
+}

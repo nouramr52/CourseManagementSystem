@@ -21,9 +21,13 @@ export const getAllCourses = () => {
         : api.get("/courses")
 };
 
-// GET /api/courses/:id — one course with full details
-export const getCourseById = (id) =>
-    api.get(`/courses/${id}`, { headers: authHeader() });
+// GET /api/courses/:id — one course with full details (public)
+export const getCourseById = (id) => {
+    const token = localStorage.getItem("token")
+    return token
+        ? api.get(`/courses/${id}`, { headers: { Authorization: `Bearer ${token}` } })
+        : api.get(`/courses/${id}`)
+};
 
 // PUT /api/courses/:id — instructor updates a course
 export const updateCourse = (id, data) =>

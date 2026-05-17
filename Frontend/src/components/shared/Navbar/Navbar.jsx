@@ -83,10 +83,18 @@ export default function Navbar() {
 
         {/* Nav links */}
         <nav className="navbar__nav">
-          <a href="/" className="navbar__link" onClick={(e) => { e.preventDefault(); navigate('/') }}>
+          <a
+            href="/"
+            className={`navbar__link ${location.pathname === '/' ? 'navbar__link--active' : ''}`}
+            onClick={(e) => { e.preventDefault(); navigate('/') }}
+          >
             Home
           </a>
-          <a href="/courses" className="navbar__link" onClick={(e) => { e.preventDefault(); navigate('/courses') }}>
+          <a
+            href="/courses"
+            className={`navbar__link ${location.pathname === '/courses' ? 'navbar__link--active' : ''}`}
+            onClick={(e) => { e.preventDefault(); navigate('/courses') }}
+          >
             Courses
           </a>
         </nav>

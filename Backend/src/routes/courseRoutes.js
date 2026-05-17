@@ -24,8 +24,8 @@ router.get("/", getAllCoursesHandler);
 router.get("/mine", authMiddleware, roleMiddleware(["INSTRUCTOR", "ADMIN"]), getMyCoursesHandler);
 
 // GET /api/courses/:id
-// Returns one course with full details
-router.get("/:id", authMiddleware, getCourseByIdHandler);
+// Returns one course with full details — public, no auth required
+router.get("/:id", getCourseByIdHandler);
 
 // ── Instructor / Admin only ────────────────────────────────────────────────
 
