@@ -6,6 +6,7 @@ import enrollmentRoutes from "./routes/enrollmentRoutes.js";
 import materialRoutes from "./routes/materialRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import instructorRoutes from "./routes/instructorRoutes.js";
+import scheduleRoutes from "./routes/scheduleRoutes.js";
 
 const app = express();
 
@@ -22,5 +23,6 @@ app.use("/api/enrollments", enrollmentRoutes);
 app.use("/api/materials", materialRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/instructor", instructorRoutes);
+app.use("/api/schedules", scheduleRoutes);
 
 export default app;

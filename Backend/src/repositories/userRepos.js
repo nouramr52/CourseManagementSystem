@@ -34,3 +34,32 @@ export const updateUserRole = (id, role) => {
         data: { role },
     });
 };
+
+// ─── EMAIL VERIFICATION ────────────────────────────────────────────────────
+
+export const getUserByEmail = (email) => {
+    return prisma.user.findUnique({
+        where: { email }
+    });
+};
+
+export const updateUserOTP = (email, otp, otpExpiresAt) => {
+    return prisma.user.update({
+        where: { email },
+        data: {
+            emailOtp: otp,
+            otpExpiresAt: otpExpiresAt,
+        },
+    });
+};
+
+export const verifyUserOTP = (email) => {
+    return prisma.user.update({
+        where: { email },
+        data: {
+            isEmailVerified: true,
+            emailOtp: null,
+            otpExpiresAt: null,
+        },
+    });
+};
