@@ -61,13 +61,22 @@ export const registerUser = async (data) => {
 
     // New user — hash password, generate OTP, create record
     const hashedPassword = await bcrypt.hash(password, 10);
+<<<<<<< HEAD
+=======
+
+    // Generate OTP
+>>>>>>> fouda
     const otp = generateOTP();
     const otpExpiresAt = getOTPExpiry();
 
     const newUser = await createUser({
         name,
         email,
+<<<<<<< HEAD
         password:        hashedPassword,
+=======
+        password: hashedPassword,
+>>>>>>> fouda
         role,
         emailOtp:        otp,
         otpExpiresAt,
@@ -86,9 +95,28 @@ export const registerUser = async (data) => {
         role:   newUser.role,
     });
 
+<<<<<<< HEAD
     return {
         ...createAuthResponse(newUser),
         message: "Registration successful! Please check your email for OTP verification.",
+=======
+    const token = jwt.sign(
+        { id: newUser.id, role: newUser.role },
+        process.env.JWT_SECRET
+    );
+
+    return {
+        user: {
+            id: newUser.id,
+            name: newUser.name,
+            email: newUser.email,
+            role: newUser.role,
+            createdAt: newUser.createdAt,
+            isEmailVerified: newUser.isEmailVerified
+        },
+        token,
+        message: 'Registration successful! Please check your email for OTP verification.'
+>>>>>>> fouda
     };
 };
 
